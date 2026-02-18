@@ -1,0 +1,28 @@
+{
+  "nav": {
+    "courses": "Courses",
+    "announcements": "Announcements",
+    "about": "About",
+    "contact": "Contact",
+    "login": "Login",
+    "logout": "Logout",
+    "profile": "Profile"
+  },
+  "home": {
+    "welcome": "Welcome to Academy",
+    "subtitle": "Unlock your potential with expert-led courses. Start learning today.",
+    "explore": "Explore Courses",
+    "featured": "Featured Courses",
+    "why_choose": "Why Choose Academy?",
+    "stats": {
+      "courses": "Courses",
+      "students": "Students",
+      "rating": "Rating"
+    }
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "success": "Success"
+  }
+}

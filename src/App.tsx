@@ -1,0 +1,49 @@
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import Index from "./pages/Index";
+import Login from "./pages/Login";
+import Admin from "./pages/Admin";
+import CourseCatalog from "./pages/CourseCatalog";
+import CourseDetails from "./pages/CourseDetails";
+import CourseViewer from "./pages/CourseViewer";
+import QuizPage from "./pages/QuizPage";
+import Profile from "./pages/Profile";
+import Announcements from "./pages/Announcements";
+import Contact from "./pages/Contact";
+import About from "./pages/About";
+import TeacherDashboard from "./pages/TeacherDashboard";
+import NotFound from "./pages/NotFound";
+
+const queryClient = new QueryClient();
+
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <TooltipProvider>
+      <Toaster />
+      <Sonner />
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<CourseCatalog />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/courses" element={<CourseCatalog />} />
+          <Route path="/courses/:id" element={<CourseDetails />} />
+          <Route path="/courses/:courseId/learn" element={<CourseViewer />} />
+          <Route path="/courses/:courseId/quiz" element={<QuizPage />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/announcements" element={<Announcements />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/teacher" element={<TeacherDashboard />} />
+          <Route path="/admin" element={<Admin />} />
+          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </BrowserRouter>
+    </TooltipProvider>
+  </QueryClientProvider>
+);
+
+export default App;
