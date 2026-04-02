@@ -1,4 +1,4 @@
-{
+﻿{
   "nav": {
     "courses": "Courses",
     "announcements": "Announcements",
@@ -6,23 +6,202 @@
     "contact": "Contact",
     "login": "Login",
     "logout": "Logout",
-    "profile": "Profile"
+    "profile": "Profile",
+    "academy": "Al Sanaa"
   },
   "home": {
-    "welcome": "Welcome to Academy",
+    "welcome": "Welcome to Al Sanaa",
     "subtitle": "Unlock your potential with expert-led courses. Start learning today.",
     "explore": "Explore Courses",
     "featured": "Featured Courses",
-    "why_choose": "Why Choose Academy?",
+    "why_choose": "Why Choose Al Sanaa?",
     "stats": {
       "courses": "Courses",
       "students": "Students",
       "rating": "Rating"
+    },
+    "testimonials": {
+      "title": "What Our Students Say",
+      "praise1": "The best investment I've made in my career.",
+      "praise2": "Incredible content and amazing instructors.",
+      "praise3": "Highly recommended for anyone looking to upskill."
+    },
+    "newsletter": {
+      "title": "Stay Updated",
+      "desc": "Subscribe to our newsletter for the latest courses and offers.",
+      "placeholder": "Enter your email",
+      "subscribe": "Subscribe"
     }
+  },
+  "about": {
+    "title": "About the Platform",
+    "subtitle": "Al-Sanaa is a training, education and consulting platform founded in 2024, offering a comprehensive range of academic courses, training programs in various specializations, specialized scientific and professional consultations, and innovative developmental solutions for individuals, institutions, and companies locally and internationally.",
+    "vision_title": "Vision",
+    "vision_desc": "To become the leading and distinguished platform providing innovative educational, training, and consulting services that contribute to the development of individuals and institutions at both local and international levels.",
+    "mission_title": "Mission",
+    "mission_desc": "To provide meaningful, high-quality, and easily understandable educational, training, and consulting content using the latest methods and technologies, with the goal of meeting the needs of learners and clients and contributing to civilizational renaissance and sustainable development locally, regionally, and internationally.",
+    "objectives_title": "Objectives",
+    "objectives": [
+      "Develop diverse educational and training programs that meet the needs of different target groups.",
+      "Provide specialized consultations that help individuals and companies achieve their goals.",
+      "Use modern educational technologies to ensure a distinguished learning experience.",
+      "Expand the scope of services to cover multiple specialized fields that meet changing market needs.",
+      "Build strategic partnerships with educational, training, and consulting institutions to enhance service quality."
+    ],
+    "values_title": "Values",
+    "values_subtitle": "To enhance our credibility and ensure the delivery of high-quality services in education, training, and consulting, we adopt the following core values:",
+    "quality": "Quality & Excellence",
+    "quality_desc": "Commitment to providing high-quality educational, training, and consulting content and services that meet the needs of learners and clients.",
+    "innovation": "Innovation & Renewal",
+    "innovation_desc": "Using the latest educational and training technologies, such as virtual and augmented reality, to provide interactive and innovative learning experiences.",
+    "integrity": "Credibility & Transparency",
+    "integrity_desc": "Providing reliable and transparent information in all aspects of education, training, and consulting, and building relationships based on trust.",
+    "sustainability": "Sustainable Development",
+    "sustainability_desc": "Focusing on developing the skills of individuals and institutions in line with labor market needs and modern technological developments.",
+    "continuous_learning": "Continuous Learning",
+    "continuous_learning_desc": "Encouraging a culture of lifelong learning and providing training programs that keep pace with rapid changes in knowledge and technology.",
+    "collaboration": "Cooperation & Partnership",
+    "collaboration_desc": "Building collaborative relationships with other educational, training, and consulting institutions to enhance service quality.",
+    "diversity": "Diversity & Inclusivity",
+    "diversity_desc": "Providing services that meet the needs of different groups and social segments, ensuring educational content reaches as many learners as possible."
+  },
+  "contact": {
+    "title": "Contact Us",
+    "subtitle": "Have a question or need help? We're here for you",
+    "send_message": "Send us a Message",
+    "form_desc": "Fill out the form and we'll respond as soon as possible",
+    "full_name": "Full Name",
+    "email": "Email",
+    "subject": "Subject",
+    "message": "Message",
+    "subject_placeholder": "How can we help you?",
+    "message_placeholder": "Tell us more...",
+    "send": "Send Message",
+    "sending": "Sending...",
+    "required_fields": "Please fill in all required fields",
+    "success": "Message sent successfully! We'll get back to you soon.",
+    "error": "Failed to send message. Please try again.",
+    "get_in_touch": "Get in Touch",
+    "channels": "Reach out through any of these channels",
+    "phone": "Phone",
+    "address": "Address",
+    "address_value": "123 Education Street, Learning City, LC 12345",
+    "office_hours": "Office Hours",
+    "mon_fri": "Monday - Friday",
+    "mon_fri_hours": "9:00 AM - 6:00 PM",
+    "saturday": "Saturday",
+    "saturday_hours": "10:00 AM - 4:00 PM",
+    "sunday": "Sunday",
+    "sunday_hours": "Closed"
+  },
+  "auth": {
+    "academy": "Al Sanaa",
+    "welcome_back": "Welcome back!",
+    "start_journey": "Start your learning journey",
+    "sign_in": "Sign in",
+    "create_account": "Create account",
+    "sign_in_desc": "Enter your credentials to access your account",
+    "create_desc": "Create an account to get started",
+    "full_name": "Full Name",
+    "email": "Email",
+    "password": "Password",
+    "min_chars": "Minimum 6 characters",
+    "account_type": "Account Type",
+    "student": "Student",
+    "student_desc": "Learn from courses",
+    "teacher": "Teacher",
+    "teacher_desc": "Create & sell courses",
+    "sign_in_btn": "Sign In",
+    "create_btn": "Create Account",
+    "no_account": "Don't have an account? Sign up",
+    "have_account": "Already have an account? Sign in",
+    "signed_in": "Welcome back!",
+    "account_created": "Account created! You can now sign in."
+  },
+  "announcements": {
+    "title": "Announcements",
+    "subtitle": "Stay updated with the latest news and important information from Academy",
+    "loading": "Loading announcements...",
+    "none_title": "No Announcements Yet",
+    "none_desc": "Check back later for updates and news",
+    "audience_all": "All Users",
+    "audience_students": "Students",
+    "audience_teachers": "Teachers"
+  },
+  "profile": {
+    "wallet_balance": "Wallet Balance",
+    "add_balance": "Add Balance",
+    "my_courses": "My Courses",
+    "settings": "Settings",
+    "enrolled_courses": "Enrolled Courses",
+    "no_courses": "No courses yet",
+    "start_journey": "Start your learning journey today!",
+    "enrolled_on": "Enrolled on",
+    "account_settings": "Account Settings",
+    "coming_soon": "Coming soon...",
+    "add_funds_title": "Add Funds to Wallet",
+    "add_funds_desc": "Choose an amount to add to your wallet.",
+    "amount": "Amount",
+    "cancel": "Cancel",
+    "confirm": "Confirm Payment"
   },
   "common": {
     "loading": "Loading...",
     "error": "An error occurred",
-    "success": "Success"
+    "success": "Success",
+    "academy": "Al Sanaa",
+    "watch": "Watch"
+  },
+  "course_catalog": {
+    "features": {
+      "pace_title": "Learn at Your Pace",
+      "pace_desc": "Access courses anytime, anywhere. Study at your own speed with lifetime access.",
+      "instructors_title": "Expert Instructors",
+      "instructors_desc": "Learn from industry professionals with years of real-world experience.",
+      "quality_title": "Quality Content",
+      "quality_desc": "High-quality video lessons, quizzes, and hands-on projects.",
+      "progress_title": "Track Progress",
+      "progress_desc": "Monitor your learning journey with interactive quizzes and assessments."
+    },
+    "no_courses": "No courses available at the moment.",
+    "view_details": "View Details",
+    "self_paced": "Self-paced",
+    "instructor": "Instructor",
+    "join_learners": "Join thousands of learners who have already transformed their careers with our comprehensive courses.",
+    "browse": "Browse our selection of premium courses",
+    "featured_badge": "Featured",
+    "no_description": "No description available"
+  },
+  "course_details": {
+    "buy_now": "Buy Now",
+    "enroll_free": "Enroll for Free",
+    "buy_with_wallet": "Buy with Wallet",
+    "start_learning": "Start Learning",
+    "free": "Free",
+    "login_required": "Please login to purchase courses",
+    "insufficient_balance": "Insufficient wallet balance. You need ${{amount}} more.",
+    "purchase_success": "Course purchased successfully!",
+    "purchase_error": "Failed to purchase course",
+    "loading_details": "Failed to load course details",
+    "course_not_found": "Course not found"
+  },
+  "course_viewer": {
+    "back": "Back to Course Details",
+    "take_quiz": "Take Quiz",
+    "no_video": "No video content available"
+  },
+  "browse": {
+    "title": "Browse Educational Content",
+    "subtitle": "Choose your educational stage to access lectures and courses tailored for you",
+    "categories": "Categories",
+    "no_subjects": "No subjects added for this year yet",
+    "no_departments": "No departments added for this college yet",
+    "pdf_lectures": "PDF Lectures",
+    "free": "Free",
+    "teacher": "Teacher",
+    "unknown": "Unknown",
+    "view_lecture": "View Lecture",
+    "no_pdfs": "No PDF lectures currently available for this category.",
+    "loading": "Loading..."
   }
 }

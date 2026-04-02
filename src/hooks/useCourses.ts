@@ -5,10 +5,21 @@ import { toast } from "sonner";
 export interface Course {
   id: string;
   title: string;
+  title_ar?: string | null;
+  title_en?: string | null;
   description: string | null;
+  description_ar?: string | null;
+  description_en?: string | null;
   video_url: string | null;
+  image_url: string | null;
   price: number;
   teacher_id: string | null;
+  educational_year_id?: string | null;
+  subject_id?: string | null;
+  department_id?: string | null;
+  educational_years?: { name: string; name_ar: string; level_id: string | null } | null;
+  subjects?: { name: string; name_ar: string } | null;
+  departments?: { name: string; name_ar: string; college_id: string | null } | null;
   created_at: string;
   updated_at: string;
   teacher?: {
@@ -46,7 +57,10 @@ export function useCourses() {
             profiles (
               full_name
             )
-          )
+          ),
+          educational_years (name, name_ar, level_id),
+          subjects (name, name_ar),
+          departments (name, name_ar, college_id)
         `)
         .order("created_at", { ascending: false });
       
@@ -120,7 +134,7 @@ export function useCreateCourse() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async (course: { title: string; description: string; video_url?: string; price?: number; teacher_id?: string }) => {
+    mutationFn: async (course: { title: string; title_ar?: string; title_en?: string; description: string; description_ar?: string; description_en?: string; video_url?: string; image_url?: string; price?: number; teacher_id?: string; educational_year_id?: string | null; subject_id?: string | null; department_id?: string | null; is_free?: boolean; status?: string }) => {
       const { data, error } = await (supabase
         .from("courses") as any)
         .insert(course)
@@ -144,7 +158,7 @@ export function useUpdateCourse() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async ({ id, ...course }: { id: string; title: string; description: string; video_url?: string; price?: number; teacher_id?: string }) => {
+    mutationFn: async ({ id, ...course }: { id: string; title: string; title_ar?: string; title_en?: string; description: string; description_ar?: string; description_en?: string; video_url?: string; image_url?: string; price?: number; teacher_id?: string; educational_year_id?: string | null; subject_id?: string | null; department_id?: string | null; is_free?: boolean; status?: string }) => {
       const { data, error } = await (supabase
         .from("courses") as any)
         .update(course)

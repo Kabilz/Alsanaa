@@ -3,7 +3,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserManagement } from "@/components/admin/UserManagement";
 import { FinancialDashboard } from "@/components/admin/FinancialDashboard";
-import { CardManagement } from "@/components/admin/CardManagement";
+import { StudentBalances } from "@/components/admin/StudentBalances";
 import { AnnouncementManagement } from "@/components/admin/AnnouncementManagement";
 import { 
   Users, 
@@ -12,8 +12,12 @@ import {
   Megaphone,
   BookOpen,
   BarChart3,
-  Plus
+  Plus,
+  Network,
+  FileText
 } from "lucide-react";
+import { AdminHierarchy } from "@/components/admin/AdminHierarchy";
+import { AdminPdfs } from "@/components/admin/AdminPdfs";
 import { CourseList } from "@/components/CourseList";
 import { CourseForm } from "@/components/CourseForm";
 import { QuizManager } from "@/components/QuizManager";
@@ -46,103 +50,154 @@ export function EnhancedAdminDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="border-b">
+    <div className="min-h-screen bg-background text-right" dir="rtl">
+      {/* ═══════════════════════════════════════════════════════════
+          HEADER
+      ═══════════════════════════════════════════════════════════ */}
+      <div className="border-b border-teal-900/40 bg-slate-900/50 backdrop-blur sticky top-0 z-50 shadow-sm">
         <div className="container py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-              <p className="text-muted-foreground">Manage the Academy platform</p>
+              <h1 className="text-3xl font-extrabold bg-gradient-to-r from-teal-400 to-cyan-400 bg-clip-text text-transparent mb-1" style={{ fontFamily: "'Cairo', sans-serif" }}>لوحة تحكم المسؤول</h1>
+              <p className="text-slate-400 text-sm">إدارة محتوى المنصة والمستخدمين والإحصائيات</p>
+            </div>
+            <div className="hidden sm:flex items-center gap-3">
+               <div className="w-12 h-12 bg-teal-500/10 rounded-full flex items-center justify-center border border-teal-500/20 shadow-inner">
+                  <BarChart3 className="w-6 h-6 text-teal-400" />
+               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="container py-8">
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-6 lg:w-auto">
-            <TabsTrigger value="overview" className="gap-2">
-              <BarChart3 className="h-4 w-4" />
-              <span className="hidden sm:inline">Overview</span>
-            </TabsTrigger>
-            <TabsTrigger value="users" className="gap-2">
-              <Users className="h-4 w-4" />
-              <span className="hidden sm:inline">Users</span>
-            </TabsTrigger>
-            <TabsTrigger value="finances" className="gap-2">
-              <DollarSign className="h-4 w-4" />
-              <span className="hidden sm:inline">Finances</span>
-            </TabsTrigger>
-            <TabsTrigger value="cards" className="gap-2">
-              <CreditCard className="h-4 w-4" />
-              <span className="hidden sm:inline">Cards</span>
-            </TabsTrigger>
-            <TabsTrigger value="announcements" className="gap-2">
-              <Megaphone className="h-4 w-4" />
-              <span className="hidden sm:inline">Announcements</span>
-            </TabsTrigger>
-            <TabsTrigger value="courses" className="gap-2">
-              <BookOpen className="h-4 w-4" />
-              <span className="hidden sm:inline">Courses</span>
-            </TabsTrigger>
-          </TabsList>
+      <div className="container py-8 animate-fade-in">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          {/* Scrollable Tabs List */}
+          <div className="overflow-x-auto pb-4 scrollbar-hide">
+            <TabsList className="bg-slate-900/60 border border-teal-900/30 w-max min-w-full justify-start p-1.5 rounded-2xl flex-nowrap h-14 gap-2">
+              <TabsTrigger value="overview" className="data-[state=active]:bg-teal-500/20 data-[state=active]:text-teal-400 data-[state=active]:shadow-sm rounded-xl py-2.5 px-5 font-semibold transition-all whitespace-nowrap">
+                <BarChart3 className="h-4 w-4 ml-2 rtl:mx-0 rtl:ml-2" />
+                <span className="hidden sm:inline">نظرة عامة</span>
+                <span className="sm:hidden">عامة</span>
+              </TabsTrigger>
+              <TabsTrigger value="users" className="data-[state=active]:bg-teal-500/20 data-[state=active]:text-teal-400 data-[state=active]:shadow-sm rounded-xl py-2.5 px-5 font-semibold transition-all whitespace-nowrap">
+                <Users className="h-4 w-4 ml-2" />
+                <span>المستخدمين</span>
+              </TabsTrigger>
+              <TabsTrigger value="finances" className="data-[state=active]:bg-teal-500/20 data-[state=active]:text-teal-400 data-[state=active]:shadow-sm rounded-xl py-2.5 px-5 font-semibold transition-all whitespace-nowrap">
+                <DollarSign className="h-4 w-4 ml-2 text-emerald-500/80" />
+                <span>المالية</span>
+              </TabsTrigger>
+              <TabsTrigger value="student_balances" className="data-[state=active]:bg-cyan-500/20 data-[state=active]:text-cyan-400 data-[state=active]:shadow-sm rounded-xl py-2.5 px-5 font-semibold transition-all whitespace-nowrap">
+                <CreditCard className="h-4 w-4 ml-2" />
+                <span>أرصدة الطلاب</span>
+              </TabsTrigger>
+              <TabsTrigger value="announcements" className="data-[state=active]:bg-teal-500/20 data-[state=active]:text-teal-400 data-[state=active]:shadow-sm rounded-xl py-2.5 px-5 font-semibold transition-all whitespace-nowrap">
+                <Megaphone className="h-4 w-4 ml-2" />
+                <span className="hidden sm:inline">الإعلانات</span>
+                <span className="sm:hidden">إعلانات</span>
+              </TabsTrigger>
+              <TabsTrigger value="courses" className="data-[state=active]:bg-teal-500/20 data-[state=active]:text-teal-400 data-[state=active]:shadow-sm rounded-xl py-2.5 px-5 font-semibold transition-all whitespace-nowrap">
+                <BookOpen className="h-4 w-4 ml-2" />
+                <span>الدورات</span>
+              </TabsTrigger>
+              <TabsTrigger value="pdfs" className="data-[state=active]:bg-teal-500/20 data-[state=active]:text-teal-400 data-[state=active]:shadow-sm rounded-xl py-2.5 px-5 font-semibold transition-all whitespace-nowrap">
+                <FileText className="h-4 w-4 ml-2" />
+                <span className="hidden sm:inline">المذكرات</span>
+                <span className="sm:hidden">PDF</span>
+              </TabsTrigger>
+              <TabsTrigger value="hierarchy" className="data-[state=active]:bg-teal-500/20 data-[state=active]:text-teal-400 data-[state=active]:shadow-sm rounded-xl py-2.5 px-5 font-semibold transition-all whitespace-nowrap">
+                <Network className="h-4 w-4 ml-2" />
+                <span>الهيكل</span>
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
-          <div className="mt-6">
-            <TabsContent value="overview" className="space-y-4">
+          <div className="mt-8 animate-slide-up">
+            <TabsContent value="overview" className="mt-0 outline-none">
               <FinancialDashboard />
             </TabsContent>
 
-            <TabsContent value="users">
+            <TabsContent value="users" className="mt-0 outline-none">
               <UserManagement />
             </TabsContent>
 
-            <TabsContent value="finances">
+            <TabsContent value="finances" className="mt-0 outline-none">
               <FinancialDashboard />
             </TabsContent>
 
-            <TabsContent value="cards">
-              <CardManagement />
+            <TabsContent value="student_balances" className="mt-0 outline-none">
+              <StudentBalances />
             </TabsContent>
 
-            <TabsContent value="announcements">
+            <TabsContent value="announcements" className="mt-0 outline-none">
               <AnnouncementManagement />
             </TabsContent>
 
-            <TabsContent value="courses">
+            <TabsContent value="hierarchy" className="mt-0 outline-none">
+              <AdminHierarchy />
+            </TabsContent>
+
+            <TabsContent value="pdfs" className="mt-0 outline-none">
+              <AdminPdfs />
+            </TabsContent>
+
+            <TabsContent value="courses" className="mt-0 outline-none">
               {courseView === "list" && (
-                <div className="space-y-6">
-                  <div className="flex justify-between items-center">
+                <div className="space-y-8">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-900/60 p-6 rounded-2xl border border-teal-900/30">
                     <div>
-                      <h2 className="text-2xl font-bold tracking-tight">Courses</h2>
-                      <p className="text-muted-foreground">
-                        Manage your courses, teachers, and quizzes
+                      <h2 className="text-2xl font-bold text-white mb-1" style={{ fontFamily: "'Cairo', sans-serif" }}>إدارة الدورات التدريبية</h2>
+                      <p className="text-slate-400 text-sm">
+                        أضف وعدل دوراتك، عين المعلمين، وأدر الاختبارات التقييمية بسهولة.
                       </p>
                     </div>
-                    <Button onClick={handleAddCourse} className="gap-2">
-                      <Plus className="h-4 w-4" />
-                      Add Course
+                    <Button 
+                      onClick={handleAddCourse} 
+                      className="bg-gradient-to-l from-teal-500 to-cyan-500 hover:from-teal-400 hover:to-cyan-400 text-slate-900 font-bold shadow-lg shadow-teal-500/20 px-6 h-12 w-full sm:w-auto shrink-0"
+                    >
+                      <Plus className="h-5 w-5 ml-2" />
+                      إنشاء دورة جديدة
                     </Button>
                   </div>
-                  <CourseList
-                    onEditCourse={handleEditCourse}
-                    onManageQuiz={handleManageQuiz}
-                  />
+                  <div className="bg-slate-900/30 rounded-2xl p-4 border border-slate-800/50">
+                    <CourseList
+                      onEditCourse={handleEditCourse}
+                      onManageQuiz={handleManageQuiz}
+                    />
+                  </div>
                 </div>
               )}
 
               {(courseView === "add" || courseView === "edit") && (
-                <CourseForm
-                  courseId={selectedCourseId || undefined}
-                  onSuccess={handleBackToCourses}
-                  onCancel={handleBackToCourses}
-                />
+                <div className="bg-slate-900/40 rounded-3xl p-6 border border-teal-900/30 shadow-xl overflow-hidden relative">
+                   <div className="absolute top-0 right-0 w-64 h-64 bg-teal-500/5 rounded-full blur-3xl -mr-32 -mt-32 opacity-50 pointer-events-none" />
+                   <h2 className="text-2xl font-bold text-white mb-8 border-b border-slate-800/50 pb-4 relative z-10" style={{ fontFamily: "'Cairo', sans-serif" }}>
+                      {courseView === "add" ? "إضافة دورة جديدة" : "تعديل تفاصيل الدورة"}
+                   </h2>
+                   <div className="relative z-10">
+                    <CourseForm
+                      courseId={selectedCourseId || undefined}
+                      onSuccess={handleBackToCourses}
+                      onCancel={handleBackToCourses}
+                    />
+                   </div>
+                </div>
               )}
 
               {courseView === "quiz" && selectedCourseId && (
-                <QuizManager
-                  courseId={selectedCourseId}
-                  onBack={handleBackToCourses}
-                />
+                <div className="bg-slate-900/40 rounded-3xl p-6 border border-teal-900/30 shadow-xl overflow-hidden relative">
+                   <div className="absolute top-0 right-0 w-64 h-64 bg-cyan-500/5 rounded-full blur-3xl -mr-32 -mt-32 opacity-50 pointer-events-none" />
+                   <h2 className="text-2xl font-bold text-white mb-8 border-b border-slate-800/50 pb-4 relative z-10" style={{ fontFamily: "'Cairo', sans-serif" }}>
+                      إدارة اختبار الدورة
+                   </h2>
+                   <div className="relative z-10">
+                    <QuizManager
+                      courseId={selectedCourseId}
+                      onBack={handleBackToCourses}
+                    />
+                   </div>
+                </div>
               )}
             </TabsContent>
           </div>

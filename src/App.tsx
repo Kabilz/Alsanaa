@@ -16,33 +16,40 @@ import Contact from "./pages/Contact";
 import About from "./pages/About";
 import TeacherDashboard from "./pages/TeacherDashboard";
 import NotFound from "./pages/NotFound";
+import Browse from "./pages/Browse";
+import ScrollToTop from "./components/ScrollToTop";
+import { CartProvider } from "./contexts/CartContext";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<CourseCatalog />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/courses" element={<CourseCatalog />} />
-          <Route path="/courses/:id" element={<CourseDetails />} />
-          <Route path="/courses/:courseId/learn" element={<CourseViewer />} />
-          <Route path="/courses/:courseId/quiz" element={<QuizPage />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/announcements" element={<Announcements />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/contact" element={<Contact />} />
-          <Route path="/teacher" element={<TeacherDashboard />} />
-          <Route path="/admin" element={<Admin />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
+    <CartProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <ScrollToTop />
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/courses" element={<CourseCatalog />} />
+            <Route path="/browse" element={<Browse />} />
+            <Route path="/courses/:id" element={<CourseDetails />} />
+            <Route path="/courses/:id/learn" element={<CourseViewer />} />
+            <Route path="/courses/:id/quiz" element={<QuizPage />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/announcements" element={<Announcements />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/teacher" element={<TeacherDashboard />} />
+            <Route path="/admin" element={<Admin />} />
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </CartProvider>
   </QueryClientProvider>
 );
 

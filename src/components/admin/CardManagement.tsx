@@ -7,8 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Plus, Download } from "lucide-react";
+import { Loader2, Plus, Download, CreditCard } from "lucide-react";
 import { toast } from "sonner";
+import { formatCurrency } from "@/lib/utils";
 
 interface PrepaidCard {
   id: string;
@@ -26,7 +27,7 @@ export function CardManagement() {
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [openDialog, setOpenDialog] = useState(false);
-  const [cardValue, setCardValue] = useState("10");
+  const [cardValue, setCardValue] = useState("100");
   const [quantity, setQuantity] = useState("1");
 
   useEffect(() => {
@@ -43,7 +44,7 @@ export function CardManagement() {
 
     if (error) {
       console.error("Error fetching cards:", error);
-      toast.error("Failed to load cards");
+      toast.error("فشل في تحميل بيانات البطاقات");
     } else {
       setCards(data || []);
     }
@@ -56,13 +57,13 @@ export function CardManagement() {
     const value = parseFloat(cardValue);
 
     if (isNaN(qty) || qty < 1 || qty > 100) {
-      toast.error("Invalid quantity (1-100)");
+      toast.error("كمية غير صالحة (1-100)");
       setGenerating(false);
       return;
     }
 
     if (isNaN(value) || value < 1) {
-      toast.error("Invalid card value");
+      toast.error("قيمة البطاقة غير صالحة");
       setGenerating(false);
       return;
     }
@@ -86,9 +87,9 @@ export function CardManagement() {
 
     if (error) {
       console.error("Error generating cards:", error);
-      toast.error("Failed to generate cards");
+      toast.error("فشل في إنشاء البطاقات");
     } else {
-      toast.success(`Successfully generated ${qty} card(s)`);
+      toast.success(`تم بنجاح إنشاء ${qty} بطاقة / بطاقات`);
       setOpenDialog(false);
       fetchCards();
     }
@@ -98,26 +99,26 @@ export function CardManagement() {
 
   const exportToCSV = () => {
     const csv = [
-      ['Serial Number', 'Secret Code', 'Value', 'Status', 'Created Date'].join(','),
+      ['الرقم التسلسلي', 'الكود السري', 'القيمة', 'الحالة', 'تاريخ الإنشاء'].join(','),
       ...cards.map(card => [
         card.serial_number,
         card.secret_code,
         card.value,
-        card.status,
-        new Date(card.created_at).toLocaleDateString()
+        translateStatus(card.status),
+        new Date(card.created_at).toLocaleDateString('ar-EG')
       ].join(','))
     ].join('\n');
 
-    const blob = new Blob([csv], { type: 'text/csv' });
+    const blob = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), csv], { type: 'text/csv;charset=utf-8;' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.setAttribute('hidden', '');
     a.setAttribute('href', url);
-    a.setAttribute('download', `cards_${Date.now()}.csv`);
+    a.setAttribute('download', `البطاقات_${Date.now()}.csv`);
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    toast.success("Cards exported to CSV");
+    toast.success("تم تصدير البطاقات إلى ملف CSV");
   };
 
   const getStatusBadgeVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
@@ -129,46 +130,67 @@ export function CardManagement() {
     }
   };
 
+  const translateStatus = (status: string) => {
+    switch (status) {
+      case 'active': return 'فعالة';
+      case 'used': return 'مستخدمة';
+      case 'expired': return 'منتهية';
+      default: return status;
+    }
+  };
+
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle>Prepaid Card Management</CardTitle>
-            <CardDescription>Generate and manage prepaid cards for course purchases</CardDescription>
+    <Card className="bg-slate-900/40 border-teal-900/30 shadow-xl overflow-hidden" dir="rtl">
+      <CardHeader className="border-b border-slate-800/50 pb-6 bg-slate-900/20">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+             <div className="p-3 bg-cyan-500/10 rounded-xl border border-cyan-500/20">
+                <CreditCard className="w-6 h-6 text-cyan-400" />
+             </div>
+            <div>
+              <CardTitle className="text-2xl font-bold text-white mb-1" style={{ fontFamily: "'Cairo', sans-serif" }}>إدارة البطاقات</CardTitle>
+              <CardDescription className="text-slate-400">إنشاء وإدارة بطاقات الدفع المسبق لشحن محافظ المستخدمين وشراء الدورات</CardDescription>
+            </div>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={exportToCSV} disabled={cards.length === 0}>
-              <Download className="mr-2 h-4 w-4" />
-              Export CSV
+          <div className="flex gap-3 w-full md:w-auto">
+            <Button 
+              variant="outline" 
+              onClick={exportToCSV} 
+              disabled={cards.length === 0} 
+              className="flex-1 md:flex-none border-slate-700 text-slate-300 hover:bg-slate-800"
+            >
+              <Download className="ml-2 h-4 w-4" />
+              تصدير CSV
             </Button>
             <Dialog open={openDialog} onOpenChange={setOpenDialog}>
               <DialogTrigger asChild>
-                <Button>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Generate Cards
+                <Button className="flex-1 md:flex-none bg-gradient-to-l from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-white font-bold shadow-lg shadow-cyan-500/20">
+                  <Plus className="ml-2 h-4 w-4" />
+                  إنشاء بطاقات
                 </Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="sm:max-w-[425px] bg-slate-900 border-teal-900/50 text-right" dir="rtl">
                 <DialogHeader>
-                  <DialogTitle>Generate Prepaid Cards</DialogTitle>
-                  <DialogDescription>
-                    Create new prepaid cards with specified value
+                  <DialogTitle className="text-2xl font-bold text-white mb-2" style={{ fontFamily: "'Cairo', sans-serif" }}>إنشاء بطاقات دفع مسبق</DialogTitle>
+                  <DialogDescription className="text-slate-400">
+                    أدخل القيمة والعدد لإنشاء بطاقات شحن جديدة.
                   </DialogDescription>
                 </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="value">Card Value ($)</Label>
+                <div className="grid gap-5 py-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="value" className="text-slate-300">قيمة البطاقة</Label>
                     <Input
                       id="value"
                       type="number"
                       value={cardValue}
                       onChange={(e) => setCardValue(e.target.value)}
-                      placeholder="10.00"
+                      placeholder="100"
+                      className="bg-slate-800/50 border-slate-700 text-white text-left placeholder:text-slate-500"
+                      dir="ltr"
                     />
                   </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="quantity">Quantity (1-100)</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="quantity" className="text-slate-300">الكمية (1-100)</Label>
                     <Input
                       id="quantity"
                       type="number"
@@ -177,16 +199,18 @@ export function CardManagement() {
                       placeholder="1"
                       min="1"
                       max="100"
+                      className="bg-slate-800/50 border-slate-700 text-white text-left placeholder:text-slate-500"
+                      dir="ltr"
                     />
                   </div>
                 </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setOpenDialog(false)}>
-                    Cancel
+                <DialogFooter className="gap-2 sm:gap-0">
+                  <Button variant="outline" onClick={() => setOpenDialog(false)} className="border-slate-700 text-slate-300 hover:bg-slate-800">
+                    إلغاء
                   </Button>
-                  <Button onClick={generateCards} disabled={generating}>
-                    {generating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Generate
+                  <Button onClick={generateCards} disabled={generating} className="bg-cyan-600 hover:bg-cyan-500 text-white">
+                    {generating && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
+                    إنشاء
                   </Button>
                 </DialogFooter>
               </DialogContent>
@@ -194,43 +218,44 @@ export function CardManagement() {
           </div>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-0">
         {loading ? (
-          <div className="flex justify-center py-8">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <div className="flex flex-col justify-center items-center py-20 text-cyan-500">
+            <Loader2 className="h-10 w-10 animate-spin mb-4" />
+            <p className="text-slate-400 font-medium font-cairo">جاري تحميل أرقام البطاقات...</p>
           </div>
         ) : (
-          <div className="rounded-md border">
+          <div className="overflow-x-auto">
             <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Serial Number</TableHead>
-                  <TableHead>Secret Code</TableHead>
-                  <TableHead>Value</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Created</TableHead>
+              <TableHeader className="bg-slate-900/50">
+                <TableRow className="border-slate-800 hover:bg-transparent">
+                  <TableHead className="text-right text-slate-400 font-semibold py-4">الرقم التسلسلي</TableHead>
+                  <TableHead className="text-right text-slate-400 font-semibold py-4">الكود السري</TableHead>
+                  <TableHead className="text-right text-slate-400 font-semibold py-4">القيمة</TableHead>
+                  <TableHead className="text-right text-slate-400 font-semibold py-4">الحالة</TableHead>
+                  <TableHead className="text-right text-slate-400 font-semibold py-4">تاريخ الإنشاء</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {cards.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                      No cards generated yet
+                  <TableRow className="border-slate-800 hover:bg-slate-800/20">
+                    <TableCell colSpan={5} className="text-center py-12 text-slate-500">
+                      لم يتم إنشاء أي بطاقات بعد
                     </TableCell>
                   </TableRow>
                 ) : (
                   cards.map((card) => (
-                    <TableRow key={card.id}>
-                      <TableCell className="font-mono">{card.serial_number}</TableCell>
-                      <TableCell className="font-mono">{card.secret_code}</TableCell>
-                      <TableCell>${card.value.toFixed(2)}</TableCell>
+                    <TableRow key={card.id} className="border-slate-800 hover:bg-slate-800/30 transition-colors">
+                      <TableCell className="font-mono text-slate-300 text-left" dir="ltr">{card.serial_number}</TableCell>
+                      <TableCell className="font-mono font-bold text-cyan-400 text-left" dir="ltr">{card.secret_code}</TableCell>
+                      <TableCell className="font-semibold text-emerald-400" dir="ltr" style={{ textAlign: "right" }}>{formatCurrency(card.value)}</TableCell>
                       <TableCell>
-                        <Badge variant={getStatusBadgeVariant(card.status)}>
-                          {card.status}
+                        <Badge variant={getStatusBadgeVariant(card.status)} className="px-3 py-1 font-semibold">
+                          {translateStatus(card.status)}
                         </Badge>
                       </TableCell>
-                      <TableCell>
-                        {new Date(card.created_at).toLocaleDateString()}
+                      <TableCell className="text-slate-400 text-sm">
+                        {new Date(card.created_at).toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' })}
                       </TableCell>
                     </TableRow>
                   ))

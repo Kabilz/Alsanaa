@@ -6,16 +6,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Loader2, BookOpen, GraduationCap, Users } from "lucide-react";
+import { Loader2, BookOpen } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export function AuthForm() {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
-  const [accountType, setAccountType] = useState<"student" | "teacher">("student");
   const [loading, setLoading] = useState(false);
   const { signIn, signUp } = useAuth();
+  const { t } = useTranslation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,154 +25,102 @@ export function AuthForm() {
     try {
       if (isLogin) {
         await signIn(email, password);
-        toast.success("Welcome back!");
+        toast.success(t('auth.signed_in'));
       } else {
-        // Sign up the user
         const { data, error } = await signUp(email, password);
         
         if (error) throw error;
         
-        // Update/Create profile with selected role
         if (data?.user) {
           const { error: profileError } = await (supabase
             .from('profiles') as any)
             .upsert({ 
               id: data.user.id,
-              role: accountType === 'teacher' ? 'teacher' : 'customer',
+              role: 'customer',
               full_name: fullName
             });
 
           if (profileError) {
             console.error('Error updating profile:', profileError);
           }
-
-          // If teacher, create teacher profile
-          if (accountType === 'teacher') {
-            const { error: teacherError } = await (supabase
-              .from('teachers') as any)
-              .insert({ id: data.user.id });
-            
-            // Ignore duplicate key errors (teacher profile already exists)
-            if (teacherError && !teacherError.message.includes('duplicate')) {
-              console.error('Error creating teacher profile:', teacherError);
-            }
-          }
         }
 
-        toast.success("Account created! You can now sign in.");
+        toast.success(t('auth.account_created'));
         setIsLogin(true);
       }
     } catch (error: any) {
-      toast.error(error.message);
+      toast.error("حدث خطأ أثناء المصادقة. " + error.message);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-teal-900 p-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center bg-background relative overflow-hidden p-4">
+      {/* Background Decorators */}
+      <div className="absolute inset-0 z-0">
+         <div className="absolute top-0 right-0 w-full h-[50vh] bg-gradient-to-b from-teal-900/20 to-transparent" />
+         <div className="absolute top-1/4 right-1/4 w-[500px] h-[500px] bg-teal-500/10 rounded-full blur-[100px] -z-10" />
+         <div className="absolute bottom-1/4 left-1/4 w-[500px] h-[500px] bg-cyan-500/10 rounded-full blur-[100px] -z-10 animate-pulse-slow" />
+      </div>
+
+      <div className="w-full max-w-md relative z-10 animate-fade-in">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-r from-teal-500 to-cyan-500 mb-4">
-            <BookOpen className="w-8 h-8 text-white" />
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-gradient-to-br from-teal-500/20 to-cyan-500/10 border border-teal-500/30 mb-6 shadow-xl shadow-teal-500/10">
+            <BookOpen className="w-10 h-10 text-teal-400" />
           </div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-teal-400 to-cyan-400 bg-clip-text text-transparent">
-            Academy
+          <h1 className="text-4xl font-extrabold bg-gradient-to-r from-teal-400 to-cyan-400 bg-clip-text text-transparent mb-3" style={{ fontFamily: "'Cairo', sans-serif" }}>
+            {t('nav.academy')}
           </h1>
-          <p className="text-gray-400 mt-2">
-            {isLogin ? "Welcome back!" : "Start your learning journey"}
+          <p className="text-slate-400 text-lg">
+            {isLogin ? "الرجاء تسجيل الدخول للمتابعة" : "ابدأ رحلة التعلم الخاصة بك اليوم"}
           </p>
         </div>
 
-        <Card className="border-teal-900/50 bg-slate-900/50 backdrop-blur shadow-xl">
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl text-white">
-              {isLogin ? "Sign in" : "Create account"}
+        <Card className="border-teal-900/40 bg-slate-900/60 backdrop-blur-xl shadow-2xl p-2 sm:p-4 rounded-3xl">
+          <CardHeader className="space-y-2 pb-6 text-center">
+            <CardTitle className="text-2xl text-white font-bold" style={{ fontFamily: "'Cairo', sans-serif" }}>
+              {isLogin ? "تسجيل الدخول" : "إنشاء حساب جديد"}
             </CardTitle>
-            <CardDescription className="text-gray-400">
-              {isLogin
-                ? "Enter your credentials to access your account"
-                : "Create an account to get started"}
+            <CardDescription className="text-slate-400 text-base">
+              {isLogin ? "مرحباً بعودتك! أَدخِل بياناتك للوصول لحسابك." : "أَدخِل بياناتك لإنشاء حساب والبدء في التعلم."}
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-5">
               {!isLogin && (
-                <div className="space-y-4">
+                <div className="space-y-4 animate-slide-up">
                   <div className="space-y-2">
-                    <Label htmlFor="fullName" className="text-gray-300">Full Name</Label>
+                    <Label htmlFor="fullName" className="text-slate-300 font-semibold">{t('auth.full_name')}</Label>
                     <Input
                       id="fullName"
                       type="text"
-                      placeholder="John Doe"
+                      placeholder="أحمد محمد"
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
                       required
-                      className="bg-slate-950/50 border-slate-700 text-white placeholder:text-gray-500"
+                      className="bg-slate-950/80 border-slate-700/50 text-white placeholder:text-slate-600 focus:border-teal-500 focus:ring-1 focus:ring-teal-500/50 h-12"
                     />
-                  </div>
-
-                  <div className="space-y-3">
-                    <Label className="text-gray-300">Account Type</Label>
-                    <div className="grid grid-cols-2 gap-3">
-                      <button
-                        type="button"
-                        onClick={() => setAccountType("student")}
-                        className={`p-4 rounded-lg border-2 transition-all ${
-                          accountType === "student"
-                            ? "border-teal-500 bg-teal-950/50"
-                            : "border-slate-700 hover:border-slate-600 bg-slate-900/50"
-                        }`}
-                      >
-                        <Users className={`h-6 w-6 mx-auto mb-2 ${
-                          accountType === "student" ? "text-teal-400" : "text-gray-500"
-                        }`} />
-                        <p className={`font-semibold ${
-                          accountType === "student" ? "text-teal-400" : "text-gray-300"
-                        }`}>
-                          Student
-                        </p>
-                        <p className="text-xs text-gray-500 mt-1">Learn from courses</p>
-                      </button>
-                      
-                      <button
-                        type="button"
-                        onClick={() => setAccountType("teacher")}
-                        className={`p-4 rounded-lg border-2 transition-all ${
-                          accountType === "teacher"
-                            ? "border-cyan-500 bg-cyan-950/50"
-                            : "border-slate-700 hover:border-slate-600 bg-slate-900/50"
-                        }`}
-                      >
-                        <GraduationCap className={`h-6 w-6 mx-auto mb-2 ${
-                          accountType === "teacher" ? "text-cyan-400" : "text-gray-500"
-                        }`} />
-                        <p className={`font-semibold ${
-                          accountType === "teacher" ? "text-cyan-400" : "text-gray-300"
-                        }`}>
-                          Teacher
-                        </p>
-                        <p className="text-xs text-gray-500 mt-1">Create & sell courses</p>
-                      </button>
-                    </div>
                   </div>
                 </div>
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-gray-300">Email</Label>
+                <Label htmlFor="email" className="text-slate-300 font-semibold">{t('auth.email')}</Label>
                 <Input
                   id="email"
                   type="email"
-                  placeholder="you@example.com"
+                  placeholder="ahmed@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="bg-slate-950/50 border-slate-700 text-white placeholder:text-gray-500"
+                  dir="ltr"
+                  className="bg-slate-950/80 border-slate-700/50 text-white placeholder:text-slate-600 focus:border-teal-500 focus:ring-1 focus:ring-teal-500/50 h-12 text-left"
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="password" className="text-gray-300">Password</Label>
+
+              <div className="space-y-2 pb-2">
+                <Label htmlFor="password" className="text-slate-300 font-semibold">{t('auth.password')}</Label>
                 <Input
                   id="password"
                   type="password"
@@ -179,32 +128,36 @@ export function AuthForm() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
+                  dir="ltr"
                   minLength={6}
-                  className="bg-slate-950/50 border-slate-700 text-white placeholder:text-gray-500"
+                  className="bg-slate-950/80 border-slate-700/50 text-white placeholder:text-slate-600 focus:border-teal-500 focus:ring-1 focus:ring-teal-500/50 h-12 text-left"
                 />
                 {!isLogin && (
-                  <p className="text-xs text-gray-500">Minimum 6 characters</p>
+                  <p className="text-xs text-slate-500 mt-2">{t('auth.min_chars')}</p>
                 )}
               </div>
+
               <Button
                 type="submit"
-                className="w-full bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white font-semibold"
+                className="w-full h-12 text-lg bg-gradient-to-l from-teal-500 to-cyan-500 hover:from-teal-400 hover:to-cyan-400 text-slate-900 font-bold shadow-lg shadow-teal-500/20 transition-all rounded-xl"
                 disabled={loading}
               >
-                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {isLogin ? "Sign In" : "Create Account"}
+                {loading ? <Loader2 className="ml-2 h-5 w-5 animate-spin" /> : null}
+                {!loading && (isLogin ? "تسجيل الدخول" : "إنشاء حساب")}
+                {loading && "جاري المعالجة..."}
               </Button>
             </form>
 
-            <div className="mt-6 text-center">
+            <div className="mt-8 text-center pt-6 border-t border-slate-800/50">
+              <span className="text-slate-400 ml-2">
+                {isLogin ? "ليس لديك حساب؟" : "لديك حساب بالفعل؟"}
+              </span>
               <button
                 type="button"
-                onClick={() => setIsLogin(!isLogin)}
-                className="text-sm text-gray-400 hover:text-teal-400 transition-colors"
+                onClick={() => { setIsLogin(!isLogin); setPassword(""); }}
+                className="text-teal-400 hover:text-teal-300 font-bold underline decoration-teal-500/30 underline-offset-4 transition-colors focus:outline-none"
               >
-                {isLogin
-                  ? "Don't have an account? Sign up"
-                  : "Already have an account? Sign in"}
+                {isLogin ? "إنشاء حساب جديد" : "تسجيل الدخول"}
               </button>
             </div>
           </CardContent>
