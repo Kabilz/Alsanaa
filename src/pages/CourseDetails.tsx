@@ -118,6 +118,7 @@ const CourseDetails = () => {
     setPurchasing(true);
 
     try {
+        // 1. Deduct from student wallet
         const { error: updateError } = await supabase
             .from("profiles")
             .update({ wallet_balance: walletBalance - course.price } as any)
@@ -127,6 +128,7 @@ const CourseDetails = () => {
             throw new Error("فشل في خصم الرصيد");
         }
 
+        // 2. Record purchase
         const { error: insertError } = await supabase
             .from("course_purchases")
             .insert({
@@ -143,8 +145,8 @@ const CourseDetails = () => {
             throw new Error("فشل في تسجيل عملية الشراء");
         }
 
-        // Record transaction (teacher_earnings is handled automatically by DB trigger)
-        const { error: transactionError } = await supabase
+        // 3. Record transaction
+        const { data: txData, error: transactionError } = await supabase
             .from("transactions")
             .insert({
                 user_id: user.id,
@@ -152,10 +154,26 @@ const CourseDetails = () => {
                 amount: course.price,
                 payment_method: 'wallet',
                 status: 'completed',
-            });
+            })
+            .select('id')
+            .single();
 
         if (transactionError) {
             console.error("Transaction record error:", transactionError);
+        }
+
+        // 4. Credit teacher earnings & wallet via secure RPC
+        if (course.teacher_id && course.price > 0) {
+          try {
+            await (supabase.rpc as any)('credit_teacher_earning', {
+              p_course_id: course.id,
+              p_pdf_id: null,
+              p_transaction_id: txData?.id || null,
+              p_price_paid: course.price,
+            });
+          } catch (err) {
+            console.error('Teacher earnings error:', err);
+          }
         }
 
         toast.success("تم شراء الدورة بنجاح!");

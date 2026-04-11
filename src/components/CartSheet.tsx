@@ -57,7 +57,7 @@ export function CartSheet() {
     setIsCheckingOut(true);
 
     try {
-      // Deduct from wallet
+      // 1. Deduct from student wallet
       const { error: updateError } = await supabase
         .from("profiles")
         .update({ wallet_balance: walletBalance - totalPrice } as any)
@@ -65,7 +65,7 @@ export function CartSheet() {
 
       if (updateError) throw new Error("فشل في خصم الرصيد");
 
-      // Insert purchases
+      // 2. Insert purchases
       const purchases = items.map((item) => ({
         user_id: user.id,
         course_id: item.id,
@@ -85,7 +85,7 @@ export function CartSheet() {
         throw new Error("فشل في تسجيل عملية الشراء");
       }
 
-      // Record transactions
+      // 3. Record transactions & get IDs
       const transactions = items.map((item) => ({
         user_id: user.id,
         course_id: item.id,
@@ -94,12 +94,30 @@ export function CartSheet() {
         status: 'completed',
       }));
 
-      const { error: transactionError } = await supabase
+      const { data: txResults, error: transactionError } = await supabase
         .from("transactions")
-        .insert(transactions as any);
+        .insert(transactions as any)
+        .select('id, course_id');
 
       if (transactionError) {
         console.error("Transaction record error:", transactionError);
+      }
+
+      // 4. Credit teacher earnings & wallets via secure RPC
+      for (const item of items) {
+        if (item.price <= 0) continue;
+        try {
+          // Find matching transaction ID
+          const matchingTx = txResults?.find((tx: any) => tx.course_id === item.id);
+          await (supabase.rpc as any)('credit_teacher_earning', {
+            p_course_id: item.id,
+            p_pdf_id: null,
+            p_transaction_id: matchingTx?.id || null,
+            p_price_paid: item.price,
+          });
+        } catch (err) {
+          console.error('Teacher earnings error for course:', item.id, err);
+        }
       }
 
       toast.success("تم شراء الدورات بنجاح!");

@@ -79,6 +79,54 @@ export default function Browse() {
 
       if (updateError) throw new Error("فشل خصم الرصيد");
 
+      // Record PDF purchase
+      const { error: insertPurchasesError } = await supabase
+        .from("pdf_purchases")
+        .insert({
+          user_id: user.id,
+          pdf_id: pdfId,
+          price_paid: price,
+        } as any);
+
+      if (insertPurchasesError) {
+        // Rollback wallet
+        await supabase
+          .from("profiles")
+          .update({ wallet_balance: balance } as any)
+          .eq("id", user.id);
+        throw new Error("فشل في تسجيل عملية الشراء");
+      }
+
+      // Record transaction
+      const { data: txData, error: transactionError } = await supabase
+        .from("transactions")
+        .insert({
+          user_id: user.id,
+          pdf_id: pdfId,
+          amount: price,
+          payment_method: 'wallet',
+          status: 'completed',
+        } as any)
+        .select('id')
+        .single();
+
+      if (transactionError) {
+        console.error("Transaction record error:", transactionError);
+      }
+
+      // Credit teacher earnings & wallet via secure RPC
+      if (price > 0) {
+        try {
+          await (supabase.rpc as any)('credit_teacher_earning', {
+            p_pdf_id: pdfId,
+            p_transaction_id: txData?.id || null,
+            p_price_paid: price,
+          });
+        } catch (err) {
+          console.error('Teacher earnings error for PDF:', pdfId, err);
+        }
+      }
+
       // Mark as purchased locally
       setPurchasedPdfIds(prev => new Set(prev).add(pdfId));
       toast.success("تم شراء المذكرة بنجاح!");

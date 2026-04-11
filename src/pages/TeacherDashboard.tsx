@@ -130,7 +130,7 @@ const TeacherDashboard = () => {
 
     const { data: earningsData, error: earningsError } = await (supabase
       .from('teacher_earnings') as any)
-      .select('amount, status, created_at, course:courses(title, title_ar)')
+      .select('amount, status, created_at, course:courses(title), pdf:pdf_lectures(title, title_ar)')
       .eq('teacher_id', user.id)
       .order('created_at', { ascending: false });
 
@@ -152,35 +152,73 @@ const TeacherDashboard = () => {
     setEarnings(earningsData || []);
 
     // Fetch purchases for this teacher's courses
+    const tCommissionRate = teacherData?.commission_rate || 70;
     const courseIds = (coursesData || []).map((c: any) => c.id);
+    let allPurchases: any[] = [];
+    const byItemMap: Record<string, { title: string; count: number; revenue: number; type: string }> = {};
+
     if (courseIds.length > 0) {
       const { data: purchasesData } = await (supabase
         .from('course_purchases') as any)
         .select(`
           id,
           course_id,
+          user_id,
           price_paid,
           purchased_at,
-          course:courses(title, title_ar)
+          course:courses(title),
+          user:profiles(full_name, full_name_ar)
         `)
-        .in('course_id', courseIds)
-        .order('purchased_at', { ascending: false });
-
-      // Aggregate revenue per course
-      const byCourseMap: Record<string, { title: string; count: number; revenue: number }> = {};
+        .in('course_id', courseIds);
+      
       for (const p of purchasesData || []) {
+        const earning = (p.price_paid || 0) * (tCommissionRate / 100);
+        allPurchases.push({ ...p, earning, type: 'course', item_title: p.course?.title || p.course_id });
         const cid = p.course_id;
-        if (!byCourseMap[cid]) {
-          byCourseMap[cid] = { title: p.course?.title_ar || p.course?.title || cid, count: 0, revenue: 0 };
+        if (!byItemMap[cid]) {
+          byItemMap[cid] = { title: p.course?.title || cid, count: 0, revenue: 0, type: 'course' };
         }
-        byCourseMap[cid].count += 1;
-        byCourseMap[cid].revenue += p.price_paid || 0;
+        byItemMap[cid].count += 1;
+        byItemMap[cid].revenue += earning;
       }
-      setSalesData({
-        byCourse: Object.values(byCourseMap).sort((a, b) => b.revenue - a.revenue),
-        purchases: purchasesData || [],
-      });
     }
+
+    // Fetch PDF Purchases
+    const { data: myPdfs } = await supabase.from('pdf_lectures').select('id, title, title_ar').eq('teacher_id', user.id);
+    if (myPdfs && myPdfs.length > 0) {
+      const pdfIds = myPdfs.map((p: any) => p.id);
+      const { data: pdfPurchasesData } = await (supabase
+        .from('pdf_purchases') as any)
+        .select(`
+          id,
+          pdf_id,
+          user_id,
+          price_paid,
+          purchased_at,
+          pdf:pdf_lectures(title, title_ar),
+          user:profiles(full_name, full_name_ar)
+        `)
+        .in('pdf_id', pdfIds);
+
+      for (const p of pdfPurchasesData || []) {
+        const earning = (p.price_paid || 0) * (tCommissionRate / 100);
+        allPurchases.push({ ...p, earning, type: 'pdf', item_title: p.pdf?.title_ar || p.pdf?.title || p.pdf_id });
+        const pid = p.pdf_id;
+        if (!byItemMap[pid]) {
+          byItemMap[pid] = { title: p.pdf?.title_ar || p.pdf?.title || pid, count: 0, revenue: 0, type: 'pdf' };
+        }
+        byItemMap[pid].count += 1;
+        byItemMap[pid].revenue += earning;
+      }
+    }
+
+    // Sort combined purchases by date descending
+    allPurchases.sort((a, b) => new Date(b.purchased_at).getTime() - new Date(a.purchased_at).getTime());
+
+    setSalesData({
+      byCourse: Object.values(byItemMap).sort((a, b) => b.revenue - a.revenue),
+      purchases: allPurchases,
+    });
 
     setNewEmail(user.email || "");
     setLoading(false);
@@ -464,7 +502,7 @@ const TeacherDashboard = () => {
                   <div className="p-3 bg-cyan-500/20 rounded-xl shrink-0"><DollarSign className="h-5 w-5 text-cyan-400" /></div>
                   <div>
                     <p className="text-slate-400 text-xs mb-1">إجمالي الإيرادات</p>
-                    <p className="text-2xl font-extrabold text-teal-400">${salesData.purchases.reduce((s, p) => s + (p.price_paid || 0), 0).toFixed(2)}</p>
+                    <p className="text-2xl font-extrabold text-teal-400">${salesData.purchases.reduce((s, p) => s + (p.earning || 0), 0).toFixed(2)}</p>
                   </div>
                 </CardContent>
               </Card>
@@ -472,7 +510,7 @@ const TeacherDashboard = () => {
                 <CardContent className="p-5 flex items-center gap-4">
                   <div className="p-3 bg-indigo-500/20 rounded-xl shrink-0"><Users className="h-5 w-5 text-indigo-400" /></div>
                   <div>
-                    <p className="text-slate-400 text-xs mb-1">الدورات المباعة</p>
+                    <p className="text-slate-400 text-xs mb-1">العناصر المباعة</p>
                     <p className="text-2xl font-extrabold text-white">{formatNumber(salesData.byCourse.length)}</p>
                   </div>
                 </CardContent>
@@ -482,7 +520,7 @@ const TeacherDashboard = () => {
             {/* Revenue per course */}
             <Card className="border-teal-900/40 bg-slate-900/60 backdrop-blur shadow-xl">
               <CardHeader className="pb-4 border-b border-slate-800/50">
-                <CardTitle className="text-xl text-white font-bold" style={{ fontFamily: "'Cairo', sans-serif" }}>الإيرادات لكل دورة</CardTitle>
+                <CardTitle className="text-xl text-white font-bold" style={{ fontFamily: "'Cairo', sans-serif" }}>الإيرادات لكل عنصر</CardTitle>
               </CardHeader>
               <CardContent className="pt-4">
                 {salesData.byCourse.length === 0 ? (
@@ -516,7 +554,7 @@ const TeacherDashboard = () => {
             <Card className="border-teal-900/40 bg-slate-900/60 backdrop-blur shadow-xl">
               <CardHeader className="pb-4 border-b border-slate-800/50">
                 <CardTitle className="text-xl text-white font-bold" style={{ fontFamily: "'Cairo', sans-serif" }}>سجل المشتريات</CardTitle>
-                <CardDescription className="text-slate-400">جميع عمليات الشراء التي تمت على دوراتك</CardDescription>
+                <CardDescription className="text-slate-400">جميع عمليات الشراء التي تمت على دوراتك ومذكراتك</CardDescription>
               </CardHeader>
               <CardContent className="pt-4">
                 {salesData.purchases.length === 0 ? (
@@ -530,7 +568,7 @@ const TeacherDashboard = () => {
                       <thead className="bg-slate-800/80 text-xs uppercase font-bold text-slate-400 border-b border-teal-900/30">
                         <tr>
                           <th className="px-5 py-4">الطالب</th>
-                          <th className="px-5 py-4">الدورة</th>
+                          <th className="px-5 py-4">العنصر</th>
                           <th className="px-5 py-4">التاريخ</th>
                           <th className="px-5 py-4">المبلغ</th>
                         </tr>
@@ -546,9 +584,9 @@ const TeacherDashboard = () => {
                                 </div>
                               </div>
                             </td>
-                            <td className="px-5 py-4 text-slate-300 max-w-[180px] truncate">{(p.course as any)?.title_ar || (p.course as any)?.title}</td>
+                            <td className="px-5 py-4 text-slate-300 max-w-[180px] truncate">{p.item_title}</td>
                             <td className="px-5 py-4 text-slate-400 whitespace-nowrap">{p.purchased_at ? new Date(p.purchased_at).toLocaleDateString('ar-EG') : '—'}</td>
-                            <td className="px-5 py-4 font-bold text-teal-400 text-base">${(p.price_paid || 0).toFixed(2)}</td>
+                            <td className="px-5 py-4 font-bold text-teal-400 text-base">${(p.earning || 0).toFixed(2)}</td>
                           </tr>
                         ))}
                       </tbody>
