@@ -464,7 +464,7 @@ const TeacherDashboard = () => {
                           <div className="flex flex-wrap justify-center sm:justify-start gap-4 text-sm text-slate-400">
                             <span className="flex items-center gap-1.5"><Eye className="w-4 h-4"/> {formatNumber(course.view_count)} مشاهدة</span>
                             <span className="flex items-center gap-1.5"><User className="w-4 h-4"/> {formatNumber(course.enrollment_count)} طالب</span>
-                            <span className="flex items-center gap-1.5"><DollarSign className="w-4 h-4 text-teal-500"/> <span className="text-teal-400 font-semibold">${course.price}</span></span>
+                            <span className="flex items-center gap-1.5"><DollarSign className="w-4 h-4 text-teal-500"/> <span className="text-teal-400 font-semibold">{course.price} د.ل</span></span>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
@@ -502,7 +502,7 @@ const TeacherDashboard = () => {
                   <div className="p-3 bg-cyan-500/20 rounded-xl shrink-0"><DollarSign className="h-5 w-5 text-cyan-400" /></div>
                   <div>
                     <p className="text-slate-400 text-xs mb-1">إجمالي الإيرادات</p>
-                    <p className="text-2xl font-extrabold text-teal-400">${salesData.purchases.reduce((s, p) => s + (p.earning || 0), 0).toFixed(2)}</p>
+                    <p className="text-2xl font-extrabold text-teal-400">{salesData.purchases.reduce((s, p) => s + (p.earning || 0), 0).toFixed(2)} د.ل</p>
                   </div>
                 </CardContent>
               </Card>
@@ -540,7 +540,7 @@ const TeacherDashboard = () => {
                           </div>
                           <div className="text-center">
                             <p className="text-slate-400 text-xs">الإيرادات</p>
-                            <p className="text-teal-400 font-extrabold text-lg">${item.revenue.toFixed(2)}</p>
+                            <p className="text-teal-400 font-extrabold text-lg">{item.revenue.toFixed(2)} د.ل</p>
                           </div>
                         </div>
                       </div>
@@ -586,7 +586,7 @@ const TeacherDashboard = () => {
                             </td>
                             <td className="px-5 py-4 text-slate-300 max-w-[180px] truncate">{p.item_title}</td>
                             <td className="px-5 py-4 text-slate-400 whitespace-nowrap">{p.purchased_at ? new Date(p.purchased_at).toLocaleDateString('ar-EG') : '—'}</td>
-                            <td className="px-5 py-4 font-bold text-teal-400 text-base">${(p.earning || 0).toFixed(2)}</td>
+                            <td className="px-5 py-4 font-bold text-teal-400 text-base">{(p.earning || 0).toFixed(2)} د.ل</td>
                           </tr>
                         ))}
                       </tbody>
@@ -624,7 +624,7 @@ const TeacherDashboard = () => {
                           <h3 className="font-bold text-xl text-white mb-2" style={{ fontFamily: "'Cairo', sans-serif" }}>{pdf.title_ar || pdf.title}</h3>
                           <div className="flex flex-wrap justify-center sm:justify-start gap-4 text-sm text-slate-400">
                              <span className={`font-semibold ${pdf.is_free ? 'text-teal-400' : 'text-amber-400'}`}>
-                                {pdf.is_free ? "مجاني" : `$${pdf.price}`}
+                                {pdf.is_free ? "مجاني" : `${pdf.price} د.ل`}
                              </span>
                             <span>{formatNumber(pdf.view_count)} مشاهدة</span>
                             <span>{formatNumber(pdf.download_count)} تحميل</span>
@@ -691,7 +691,7 @@ const TeacherDashboard = () => {
                                 </span>
                               </td>
                               <td className="px-6 py-4 font-bold text-teal-400 text-lg">
-                                ${earning.amount.toFixed(2)}
+                                {earning.amount.toFixed(2)} د.ل
                               </td>
                               <td className="px-6 py-4">
                                 <Badge 

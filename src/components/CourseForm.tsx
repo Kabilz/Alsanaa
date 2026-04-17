@@ -91,8 +91,9 @@ export function CourseForm({ courseId, fixedTeacherId, onSuccess, onCancel }: Co
   const handleVideoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 100 * 1024 * 1024) {
-        toast.error("يجب أن يكون حجم ملف الفيديو أقل من ١٠٠ ميجابايت");
+      if (file.size > 50 * 1024 * 1024) {
+        toast.error("يجب أن يكون حجم ملف الفيديو أقل من ٥٠ ميجابايت");
+        e.target.value = "";
         return;
       }
       setVideoFile(file);
@@ -110,6 +111,11 @@ export function CourseForm({ courseId, fixedTeacherId, onSuccess, onCancel }: Co
       const fileExt = videoFile.name.split(".").pop();
       const fileName = `${crypto.randomUUID()}.${fileExt}`;
 
+      // Simulate progress since Supabase doesn't give upload progress
+      const progressInterval = setInterval(() => {
+        setUploadProgress(prev => Math.min(prev + 10, 85));
+      }, 300);
+
       const { error: uploadError } = await supabase.storage
         .from("course-videos")
         .upload(fileName, videoFile, {
@@ -117,7 +123,17 @@ export function CourseForm({ courseId, fixedTeacherId, onSuccess, onCancel }: Co
           upsert: false,
         });
 
-      if (uploadError) throw uploadError;
+      clearInterval(progressInterval);
+
+      if (uploadError) {
+        const msg = uploadError.message.toLowerCase();
+        if (msg.includes("too large") || msg.includes("size") || msg.includes("413")) {
+          toast.error("فشل رفع الفيديو: تجاوز الحجم المسموح به (50 ميجابايت)");
+        } else {
+          toast.error("فشل رفع الفيديو: " + uploadError.message);
+        }
+        return null;
+      }
 
       const { data: urlData } = supabase.storage
         .from("course-videos")
@@ -126,7 +142,7 @@ export function CourseForm({ courseId, fixedTeacherId, onSuccess, onCancel }: Co
       setUploadProgress(100);
       return urlData.publicUrl;
     } catch (error: any) {
-      toast.error("فشل رفع الفيديو: " + error.message);
+      toast.error("فشل رفع الفيديو: " + (error.message || "خطأ غير متوقع"));
       return null;
     } finally {
       setUploading(false);
@@ -155,6 +171,10 @@ export function CourseForm({ courseId, fixedTeacherId, onSuccess, onCancel }: Co
       const fileExt = imageFile.name.split(".").pop();
       const fileName = `${crypto.randomUUID()}.${fileExt}`;
 
+      const progressInterval = setInterval(() => {
+        setImageUploadProgress(prev => Math.min(prev + 20, 85));
+      }, 200);
+
       const { error: uploadError } = await supabase.storage
         .from("course-thumbnails")
         .upload(fileName, imageFile, {
@@ -162,7 +182,12 @@ export function CourseForm({ courseId, fixedTeacherId, onSuccess, onCancel }: Co
           upsert: false,
         });
 
-      if (uploadError) throw uploadError;
+      clearInterval(progressInterval);
+
+      if (uploadError) {
+        toast.error("فشل رفع الصورة: " + uploadError.message);
+        return null;
+      }
 
       const { data: urlData } = supabase.storage
         .from("course-thumbnails")
@@ -171,7 +196,7 @@ export function CourseForm({ courseId, fixedTeacherId, onSuccess, onCancel }: Co
       setImageUploadProgress(100);
       return urlData.publicUrl;
     } catch (error: any) {
-      toast.error("فشل رفع الصورة: " + error.message);
+      toast.error("فشل رفع الصورة: " + (error.message || "خطأ غير متوقع"));
       return null;
     } finally {
       setUploadingImage(false);
@@ -303,7 +328,7 @@ export function CourseForm({ courseId, fixedTeacherId, onSuccess, onCancel }: Co
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-5 bg-slate-800/20 rounded-xl border border-slate-800">
              <div className="space-y-2">
-               <Label htmlFor="price" className="text-slate-300">السعر (بالجنيه)</Label>
+               <Label htmlFor="price" className="text-slate-300">السعر (بالدينار الليبي)</Label>
                <Input
                  id="price"
                  type="number"

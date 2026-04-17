@@ -5,10 +5,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, UserCircle, Shield, GraduationCap, Plus, Users as UsersIcon } from "lucide-react";
+import { Loader2, UserCircle, Shield, GraduationCap, Plus, Users as UsersIcon, Search } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { createClient } from "@supabase/supabase-js";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -21,6 +22,7 @@ interface Profile {
   phone: string | null;
   avatar_url: string | null;
   created_at: string;
+  is_active?: boolean;
   teachers?: { commission_rate: number } | null;
 }
 
@@ -28,6 +30,7 @@ export function UserManagement() {
   const [users, setUsers] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>("all");
+  const [searchTerm, setSearchTerm] = useState<string>("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [newTeacherName, setNewTeacherName] = useState("");
   const [newTeacherEmail, setNewTeacherEmail] = useState("");
@@ -81,6 +84,22 @@ export function UserManagement() {
       fetchUsers();
     }
     setIsUpdatingCommission(false);
+  };
+
+  const toggleUserActiveStatus = async (userId: string, currentStatus: boolean) => {
+    const newStatus = !currentStatus;
+    const { error } = await supabase
+      .from('profiles')
+      .update({ is_active: newStatus })
+      .eq('id', userId);
+
+    if (error) {
+      console.error("Error updating active status:", error);
+      toast.error("فشل في تحديث حالة الحساب");
+    } else {
+      toast.success(newStatus ? "تم تنشيط الحساب بنجاح" : "تم إيقاف الحساب بنجاح");
+      setUsers(users.map(u => u.id === userId ? { ...u, is_active: newStatus } : u));
+    }
   };
 
   const changeUserRole = async (userId: string, newRole: 'customer' | 'teacher' | 'admin') => {
@@ -231,6 +250,16 @@ export function UserManagement() {
     }
   };
 
+  const filteredUsers = users.filter(user => {
+    if (!searchTerm) return true;
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      user.full_name?.toLowerCase().includes(searchLower) ||
+      user.full_name_ar?.toLowerCase().includes(searchLower) ||
+      user.phone?.includes(searchTerm)
+    );
+  });
+
   return (
     <Card className="bg-slate-900/40 border-teal-900/30 shadow-xl overflow-hidden" dir="rtl">
       <CardHeader className="border-b border-slate-800/50 pb-6 bg-slate-900/20">
@@ -245,6 +274,15 @@ export function UserManagement() {
             </div>
           </div>
           <div className="flex flex-col sm:flex-row gap-3 items-center">
+            <div className="relative w-full sm:w-[250px]">
+              <Search className="absolute right-3 top-2.5 h-4 w-4 text-slate-500" />
+              <Input
+                placeholder="بحث بالاسم أو الهاتف..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-3 pr-9 w-full bg-slate-800/50 border-slate-700 text-slate-200 placeholder:text-slate-500 rounded-lg focus-visible:ring-teal-500"
+              />
+            </div>
             <Select value={filter} onValueChange={setFilter}>
               <SelectTrigger className="w-full sm:w-[180px] bg-slate-800/50 border-slate-700 text-slate-200">
                 <SelectValue placeholder="تصفية حسب الدور" />
@@ -390,20 +428,21 @@ export function UserManagement() {
                   <TableHead className="text-right text-slate-400 font-semibold py-4">الاسم</TableHead>
                   <TableHead className="text-right text-slate-400 font-semibold py-4">الهاتف</TableHead>
                   <TableHead className="text-right text-slate-400 font-semibold py-4">الدور</TableHead>
+                  <TableHead className="text-right text-slate-400 font-semibold py-4">الحالة</TableHead>
                   <TableHead className="text-right text-slate-400 font-semibold py-4">تاريخ الانضمام</TableHead>
                   <TableHead className="text-right text-slate-400 font-semibold py-4">إجراءات</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {users.length === 0 ? (
+                {filteredUsers.length === 0 ? (
                   <TableRow className="border-slate-800 hover:bg-slate-800/20">
-                    <TableCell colSpan={5} className="text-center py-12 text-slate-500">
+                    <TableCell colSpan={6} className="text-center py-12 text-slate-500">
                       لا يوجد مستخدمين مطابقين للبحث
                     </TableCell>
                   </TableRow>
                 ) : (
-                  users.map((user) => (
-                    <TableRow key={user.id} className="border-slate-800 hover:bg-slate-800/30 transition-colors">
+                  filteredUsers.map((user) => (
+                    <TableRow key={user.id} className={`border-slate-800 hover:bg-slate-800/30 transition-colors ${user.is_active === false ? 'opacity-50 grayscale flex-row' : ''}`}>
                       <TableCell className="font-medium text-slate-200 py-4">
                         <div className="flex items-center gap-3">
                           <Avatar className="h-10 w-10 border border-slate-700 shadow-sm">
@@ -422,11 +461,22 @@ export function UserManagement() {
                           {getRoleLabel(user.role)}
                         </Badge>
                       </TableCell>
+                      <TableCell>
+                        <Badge variant={user.is_active !== false ? "outline" : "destructive"} className="px-2 py-0.5 whitespace-nowrap bg-slate-800 font-medium">
+                          {user.is_active !== false ? "نشط" : "غير نشط"}
+                        </Badge>
+                      </TableCell>
                       <TableCell className="text-slate-400 text-sm font-medium">
                         {new Date(user.created_at).toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' })}
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
+                          <Switch 
+                            checked={user.is_active !== false}
+                            onCheckedChange={() => toggleUserActiveStatus(user.id, user.is_active !== false)}
+                            title={user.is_active !== false ? "تعطيل الحساب" : "تنشيط الحساب"}
+                            className="data-[state=checked]:bg-teal-500 mr-2 rtl:ml-2 rtl:mr-0"
+                          />
                           <Select
                             value={user.role}
                             onValueChange={(value: 'customer' | 'teacher' | 'admin') =>

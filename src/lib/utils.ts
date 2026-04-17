@@ -6,10 +6,5 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatCurrency(value: number): string {
-  return new Intl.NumberFormat('ar-EG', {
-    style: 'currency',
-    currency: 'EGP',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2
-  }).format(value);
+  return (value).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",") + " د.ل";
 }

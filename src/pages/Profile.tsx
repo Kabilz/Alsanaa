@@ -32,6 +32,8 @@ const Profile = () => {
     const [dialogOpen, setDialogOpen] = useState(false);
     const [selectedAmount, setSelectedAmount] = useState<number>(25);
     const [customAmount, setCustomAmount] = useState<string>("");
+    const [globalMaxWalletBalance, setGlobalMaxWalletBalance] = useState<number | null>(null);
+    const [userMaxWalletBalance, setUserMaxWalletBalance] = useState<number | null>(null);
 
     // ── Settings state ──
     const [avatarUrl, setAvatarUrl] = useState<string>("");
@@ -57,9 +59,24 @@ const Profile = () => {
 
     const fetchBalance = async () => {
         if (!user) return;
+
+        // Fetch settings
+        try {
+            const { data: settingsData } = await supabase
+                .from('site_settings')
+                .select('value')
+                .eq('key', 'max_wallet_balance')
+                .maybeSingle();
+            if (settingsData && settingsData.value) {
+                setGlobalMaxWalletBalance(parseFloat(settingsData.value));
+            }
+        } catch (err) {
+            console.error("Error fetching site settings:", err);
+        }
+
         const { data, error } = await supabase
             .from('profiles')
-            .select('wallet_balance, full_name, avatar_url')
+            .select('wallet_balance, full_name, avatar_url, max_wallet_balance')
             .eq('id', user.id)
             .maybeSingle();
 
@@ -77,6 +94,7 @@ const Profile = () => {
         setDisplayName((data as any).full_name ?? user.user_metadata?.full_name ?? "");
         setAvatarUrl((data as any).avatar_url ?? user.user_metadata?.avatar_url ?? "");
         setNewEmail(user.email ?? "");
+        setUserMaxWalletBalance((data as any).max_wallet_balance ?? null);
     };
 
     useEffect(() => { fetchBalance(); }, [user]);
@@ -156,6 +174,14 @@ const Profile = () => {
         const amount = customAmount ? parseFloat(customAmount) : selectedAmount;
         if (!amount || amount <= 0) { toast.error("يرجى إدخال مبلغ صحيح"); return; }
         if (!user) return;
+
+        const effectiveMaxLimit = userMaxWalletBalance !== null ? userMaxWalletBalance : globalMaxWalletBalance;
+
+        if (effectiveMaxLimit !== null && (balance + amount) > effectiveMaxLimit) {
+            toast.error(`لا يمكن أن يتجاوز الرصيد الحد الأقصى المسموح به (${effectiveMaxLimit} د.ل)`);
+            return;
+        }
+
         setIsAddingBalance(true);
         try {
             const newBalance = balance + amount;
@@ -164,7 +190,7 @@ const Profile = () => {
                 .eq('id', user.id);
             if (error) throw error;
             setBalance(newBalance);
-            toast.success(`تم إضافة ${amount.toFixed(2)}$ إلى محفظتك بنجاح!`);
+            toast.success(`تم إضافة ${amount.toFixed(2)} د.ل إلى محفظتك بنجاح!`);
             setDialogOpen(false); setCustomAmount(""); setSelectedAmount(25);
         } catch (err) {
             toast.error("فشل في شحن الرصيد. يرجى المحاولة مرة أخرى.");
@@ -180,7 +206,8 @@ const Profile = () => {
             const { data, error } = await supabase
                 .from("course_purchases")
                 .select(`*, course:courses(*)`)
-                .eq("user_id", user.id);
+                .eq("user_id", user.id)
+                .eq("is_active", true);
             if (error) { console.error("Error fetching purchased courses:", error); return []; }
             return data;
         },
@@ -240,7 +267,7 @@ const Profile = () => {
                                         <span className="text-slate-300 text-sm font-medium">{t('profile.wallet_balance')}</span>
                                     </div>
                                     <div className="text-4xl font-extrabold text-white mb-1 flex items-baseline gap-1">
-                                        <span className="text-xl text-teal-500">$</span>
+                                        <span className="text-xl text-teal-500">د.ل</span>
                                         {balance.toFixed(2)}
                                     </div>
                                     <p className="text-xs text-slate-500 mb-5">الرصيد المتاح حالياً</p>
@@ -501,7 +528,7 @@ const Profile = () => {
                                                 : "bg-slate-800/50 border-slate-700 text-slate-300 hover:border-teal-500/50 hover:bg-slate-800"
                                         }`}
                                     >
-                                        ${amt}
+                                        {amt} د.ل
                                     </button>
                                 ))}
                             </div>
@@ -525,7 +552,7 @@ const Profile = () => {
                         {effectiveAmount > 0 && (
                             <div className="bg-teal-500/10 border border-teal-500/30 rounded-xl p-4 flex justify-between items-center animate-fade-in">
                                 <span className="text-slate-300 font-medium">سيتم شحن رصيدك بقيمة:</span>
-                                <span className="text-teal-400 font-extrabold text-2xl">${effectiveAmount.toFixed(2)}</span>
+                                <span className="text-teal-400 font-extrabold text-2xl">{effectiveAmount.toFixed(2)} د.ل</span>
                             </div>
                         )}
                     </div>

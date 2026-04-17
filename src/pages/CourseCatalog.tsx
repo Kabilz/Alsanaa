@@ -379,7 +379,7 @@ const CourseCatalog = () => {
                     </div>
                     <div className="flex items-center justify-between border-t border-border/50 pt-3">
                        <span className="text-xl font-bold text-primary">
-                        {course.price > 0 ? `${course.price} $` : t("course_details.free")}
+                        {course.price > 0 ? `${course.price} د.ل` : t("course_details.free")}
                       </span>
                       <span className="text-xs text-muted-foreground flex items-center gap-1 bg-secondary/50 px-2 py-1 rounded-md">
                         {t("course_catalog.self_paced")}

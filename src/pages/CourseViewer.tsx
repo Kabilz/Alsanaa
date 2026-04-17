@@ -63,6 +63,7 @@ const CourseViewer = () => {
           .select("id")
           .eq("user_id", user.id)
           .eq("course_id", id)
+          .eq("is_active", true)
           .maybeSingle();
 
         if (purchaseError) {

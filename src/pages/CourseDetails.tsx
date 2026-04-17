@@ -79,6 +79,7 @@ const CourseDetails = () => {
           .select("*")
           .eq("user_id", user.id)
           .eq("course_id", id)
+          .eq("is_active", true)
           .maybeSingle();
 
         setHasPurchased(!!purchaseData);
@@ -111,13 +112,32 @@ const CourseDetails = () => {
     if (!course) return;
 
     if (course.price > walletBalance) {
-        toast.error(`رصيد المحفظة غير كافٍ. تحتاج إلى $${(course.price - walletBalance).toFixed(2)} إضافية.`);
+        toast.error(`رصيد المحفظة غير كافٍ. تحتاج إلى ${(course.price - walletBalance).toFixed(2)} د.ل إضافية.`);
         return;
     }
 
     setPurchasing(true);
 
     try {
+        // 0. Check for existing purchase
+        const { data: existingPurchase, error: checkError } = await supabase
+            .from("course_purchases")
+            .select("id")
+            .eq("user_id", user.id)
+            .eq("course_id", course.id)
+            .maybeSingle();
+
+        if (checkError) {
+             throw new Error("فشل في التحقق من حالة الدورة");
+        }
+
+        if (existingPurchase) {
+            toast.error("لقد قمت بشراء هذه الدورة مسبقاً.");
+            setHasPurchased(true);
+            setPurchasing(false);
+            return;
+        }
+
         // 1. Deduct from student wallet
         const { error: updateError } = await supabase
             .from("profiles")
@@ -300,7 +320,7 @@ const CourseDetails = () => {
                    <div className="flex flex-col items-center justify-center pt-4 pb-6 border-b border-slate-800">
                       <span className="text-slate-400 text-sm font-medium mb-2">سعر الدورة</span>
                       <span className="text-4xl font-extrabold text-teal-400">
-                          {course.price > 0 ? `$${course.price.toFixed(2)}` : "مجاناً"}
+                          {course.price > 0 ? `${course.price.toFixed(2)} د.ل` : "مجاناً"}
                       </span>
                    </div>
                 </CardHeader>
@@ -311,7 +331,7 @@ const CourseDetails = () => {
                              <Wallet className="w-5 h-5 ml-2 text-indigo-400" />
                              رصيد المحفظة
                            </div>
-                           <span className="font-bold text-white">${walletBalance.toFixed(2)}</span>
+                           <span className="font-bold text-white">{walletBalance.toFixed(2)} د.ل</span>
                        </div>
                    )}
                    

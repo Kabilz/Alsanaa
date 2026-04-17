@@ -57,6 +57,22 @@ export function CartSheet() {
     setIsCheckingOut(true);
 
     try {
+      // 0. Check if any course is already purchased
+      const courseIds = items.map((item) => item.id);
+      const { data: existingPurchases, error: checkError } = await supabase
+        .from("course_purchases")
+        .select("course_id")
+        .eq("user_id", user.id)
+        .in("course_id", courseIds);
+
+      if (checkError) throw new Error("فشل في التحقق من المشتريات السابقة");
+
+      if (existingPurchases && existingPurchases.length > 0) {
+        toast.error("لقد قمت بشراء بعض هذه الدورات مسبقاً. يرجى إزالتها من السلة لإتمام الشراء.");
+        setIsCheckingOut(false);
+        return;
+      }
+
       // 1. Deduct from student wallet
       const { error: updateError } = await supabase
         .from("profiles")

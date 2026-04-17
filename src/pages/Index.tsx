@@ -314,7 +314,7 @@ const Index = () => {
                     )}
                     <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent" />
                     <Badge className="absolute top-3 right-3 bg-teal-500/90 text-slate-900 font-semibold text-xs">
-                      {course.price > 0 ? `${course.price} $` : "مجاني"}
+                      {course.price > 0 ? `${course.price} د.ل` : "مجاني"}
                     </Badge>
                   </div>
                   <CardContent className="p-5">

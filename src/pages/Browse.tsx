@@ -13,6 +13,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { formatCurrency } from "@/lib/utils";
+import { useEffect } from "react";
 
 export default function Browse() {
   const { t } = useTranslation();
@@ -20,6 +21,21 @@ export default function Browse() {
   const navigate = useNavigate();
   const [purchasingPdfId, setPurchasingPdfId] = useState<string | null>(null);
   const [purchasedPdfIds, setPurchasedPdfIds] = useState<Set<string>>(new Set());
+
+  // Load existing active PDF purchases on mount
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from("pdf_purchases")
+      .select("pdf_id")
+      .eq("user_id", user.id)
+      .eq("is_active", true)
+      .then(({ data }) => {
+        if (data) {
+          setPurchasedPdfIds(new Set(data.map((r: any) => r.pdf_id)));
+        }
+      });
+  }, [user]);
   
   const { data: levels, isLoading: loadingLevels } = useEducationalLevels();
   
