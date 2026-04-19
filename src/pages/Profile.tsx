@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { BookOpen, Settings, CreditCard, Plus, Award, Loader2, Camera, User, Mail, Lock, Save } from "lucide-react";
+import { BookOpen, Settings, CreditCard, Plus, Award, Loader2, Camera, User, Mail, Lock, Save, FileDown, Banknote, Smartphone, Receipt } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -34,6 +34,8 @@ const Profile = () => {
     const [customAmount, setCustomAmount] = useState<string>("");
     const [globalMaxWalletBalance, setGlobalMaxWalletBalance] = useState<number | null>(null);
     const [userMaxWalletBalance, setUserMaxWalletBalance] = useState<number | null>(null);
+    const [paymentMethod, setPaymentMethod] = useState<string | null>(null);
+    const [paymentRef, setPaymentRef] = useState<string>("");
 
     // ── Settings state ──
     const [avatarUrl, setAvatarUrl] = useState<string>("");
@@ -171,6 +173,12 @@ const Profile = () => {
     };
 
     const handleAddBalance = async () => {
+        if (!paymentMethod) { toast.error("يرجى اختيار وسيلة الدفع"); return; }
+        if (!paymentRef) { toast.error("يرجى إدخال رقم البطاقة/الهاتف"); return; }
+        if (paymentMethod === "ادفع لي" && paymentRef.length !== 10) {
+            toast.error("رقم الهاتف لخدمة ادفع لي يجب أن يكون 10 أرقام");
+            return;
+        }
         const amount = customAmount ? parseFloat(customAmount) : selectedAmount;
         if (!amount || amount <= 0) { toast.error("يرجى إدخال مبلغ صحيح"); return; }
         if (!user) return;
@@ -189,14 +197,72 @@ const Profile = () => {
                 .upsert({ id: user.id, wallet_balance: newBalance } as any, { onConflict: 'id' })
                 .eq('id', user.id);
             if (error) throw error;
+            
+            const { error: txError } = await supabase.from('transactions').insert({
+                user_id: user.id,
+                amount: amount,
+                payment_method: 'topup',
+                payment_service: paymentMethod,
+                status: 'completed',
+            } as any);
+            
+            if (txError) {
+                console.error("Tx error", txError);
+                // Rollback balance
+                await supabase.from('profiles').update({ wallet_balance: balance } as any).eq('id', user.id);
+                throw txError;
+            }
+
             setBalance(newBalance);
-            toast.success(`تم إضافة ${amount.toFixed(2)} د.ل إلى محفظتك بنجاح!`);
-            setDialogOpen(false); setCustomAmount(""); setSelectedAmount(25);
+            toast.success(`تم الشحن عبر ${paymentMethod} بنجاح!`);
+            setDialogOpen(false); setCustomAmount(""); setSelectedAmount(25); setPaymentMethod(null); setPaymentRef("");
         } catch (err) {
             toast.error("فشل في شحن الرصيد. يرجى المحاولة مرة أخرى.");
         } finally {
             setIsAddingBalance(false);
         }
+    };
+
+    const { data: transactions, isLoading: isLoadingTransactions } = useQuery({
+        queryKey: ["transactions", user?.id],
+        queryFn: async () => {
+            if (!user) return [];
+            const { data, error } = await supabase
+                .from("transactions")
+                .select("*")
+                .eq("user_id", user.id)
+                .order("created_at", { ascending: false });
+            if (error) { console.error("Error fetching transactions:", error); return []; }
+            return data;
+        },
+        enabled: !!user,
+    });
+    
+    const downloadStatement = () => {
+        if (!transactions || transactions.length === 0) {
+            toast.error("لا توجد حركات مالية لتنزيلها");
+            return;
+        }
+        
+        const headers = ["رقم الحركة", "التاريخ", "القيمة", "نوع الحركة", "اسم الخدمة", "الحالة"];
+        const rows = transactions.map(tx => [
+            tx.id,
+            new Date(tx.created_at).toLocaleDateString('ar-EG'),
+            tx.amount.toString(),
+            tx.payment_method === 'topup' ? 'شراء رصيد' : (tx.payment_method === 'course_purchase' ? 'شراء دورة' : tx.payment_method),
+            tx.payment_service || 'محفظة الموقع',
+            tx.status === 'completed' ? 'مكتملة' : tx.status
+        ]);
+        
+        const csvContent = "\uFEFF" + [headers, ...rows].map(e => e.join(",")).join("\n");
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", `كشف_حساب_${new Date().toISOString().split('T')[0]}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     };
 
     const { data: purchasedCourses, isLoading } = useQuery({
@@ -295,6 +361,10 @@ const Profile = () => {
                                     <BookOpen className="ml-2 h-4 w-4" />
                                     {t('profile.my_courses')}
                                 </TabsTrigger>
+                                <TabsTrigger value="statement" className="data-[state=active]:bg-teal-500/20 data-[state=active]:text-teal-400 data-[state=active]:shadow-sm rounded-lg py-2.5 px-4 grow sm:grow-0 transition-all">
+                                    <Receipt className="ml-2 h-4 w-4" />
+                                    كشف الحساب
+                                </TabsTrigger>
                                 <TabsTrigger value="settings" className="data-[state=active]:bg-teal-500/20 data-[state=active]:text-teal-400 data-[state=active]:shadow-sm rounded-lg py-2.5 px-4 grow sm:grow-0 transition-all">
                                     <Settings className="ml-2 h-4 w-4" />
                                     {t('profile.settings')}
@@ -367,6 +437,59 @@ const Profile = () => {
                                         ))}
                                     </div>
                                 )}
+                            </TabsContent>
+
+                            {/* ── Statement Tab ── */}
+                            <TabsContent value="statement" className="mt-0 outline-none animate-slide-up">
+                                <div className="flex items-center justify-between mb-6">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 rounded-lg bg-teal-500/20 flex flex-shrink-0 items-center justify-center">
+                                           <Receipt className="h-4 w-4 text-teal-400" />
+                                        </div>
+                                        <h2 className="text-2xl font-bold text-white m-0" style={{ fontFamily: "'Cairo', sans-serif" }}>كشف حساب الطالب</h2>
+                                    </div>
+                                    <Button onClick={downloadStatement} className="bg-gradient-to-l from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold shadow-lg shadow-teal-500/20">
+                                        <FileDown className="ml-2 h-4 w-4" />
+                                        تنزيل كشف الحساب (Excel)
+                                    </Button>
+                                </div>
+                                
+                                <Card className="bg-slate-900/40 border-teal-900/30 overflow-hidden">
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-right">
+                                            <thead className="bg-slate-800/50 text-slate-300 text-sm">
+                                                <tr>
+                                                    <th className="p-4 font-semibold">ت</th>
+                                                    <th className="p-4 font-semibold">التاريخ</th>
+                                                    <th className="p-4 font-semibold">القيمة</th>
+                                                    <th className="p-4 font-semibold">اسم الخدمة</th>
+                                                    <th className="p-4 font-semibold">نوع الحركة</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-slate-800/50">
+                                                {isLoadingTransactions ? (
+                                                    <tr><td colSpan={5} className="p-8 text-center text-slate-500">جاري التحميل...</td></tr>
+                                                ) : transactions && transactions.length > 0 ? (
+                                                    transactions.map((tx, idx) => (
+                                                        <tr key={tx.id} className="hover:bg-slate-800/30 transition-colors text-slate-300">
+                                                            <td className="p-4">{idx + 1}</td>
+                                                            <td className="p-4" dir="ltr">{new Date(tx.created_at).toLocaleDateString('ar-EG')}</td>
+                                                            <td className="p-4 font-bold text-white">{tx.amount.toFixed(2)} د.ل</td>
+                                                            <td className="p-4">{tx.payment_service || '-'}</td>
+                                                            <td className="p-4">
+                                                                <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${tx.payment_method === 'topup' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-blue-500/10 text-blue-400'}`}>
+                                                                    {tx.payment_method === 'topup' ? 'شراء رصيد' : (tx.payment_method === 'course_purchase' ? 'شراء دورة' : tx.payment_method)}
+                                                                </span>
+                                                            </td>
+                                                        </tr>
+                                                    ))
+                                                ) : (
+                                                    <tr><td colSpan={5} className="p-8 text-center text-slate-500">لا توجد حركات مالية مسجلة</td></tr>
+                                                )}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </Card>
                             </TabsContent>
 
                             {/* ── Settings Tab ── */}
@@ -514,69 +637,97 @@ const Profile = () => {
                         </DialogDescription>
                     </DialogHeader>
                     
-                    <div className="space-y-6 py-4">
-                        <div className="space-y-3">
-                            <label className="text-sm font-medium text-slate-300 block">اختر مبلغاً أو أدخل قيمة مخصصة:</label>
-                            <div className="grid grid-cols-4 gap-2">
-                                {PRESET_AMOUNTS.map((amt) => (
+                    {!paymentMethod ? (
+                        <div className="space-y-6 py-4">
+                            <div className="text-center mb-6">
+                                <div className="w-16 h-16 bg-teal-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-teal-500/20">
+                                    <Banknote className="h-8 w-8 text-teal-400" />
+                                </div>
+                                <h3 className="text-white text-lg font-bold">إشحن محفظتك</h3>
+                                <p className="text-slate-400 text-sm mt-1">إختر وسيلة الدفع أدناه وإتبع الخطوات للشحن</p>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                {[
+                                    { id: 'موبي كاش', name: 'موبي كاش', icon: Smartphone, color: 'text-blue-400' },
+                                    { id: 'مصرفي بلس', name: 'مصرفي بلس', icon: Smartphone, color: 'text-indigo-400' },
+                                    { id: 'يسر باي', name: 'يسر باي', icon: CreditCard, color: 'text-teal-400' },
+                                    { id: 'ادفع لي', name: 'إدفع لي', icon: Smartphone, color: 'text-emerald-400' },
+                                ].map((pm) => (
                                     <button
-                                        key={amt}
-                                        onClick={() => { setSelectedAmount(amt); setCustomAmount(""); }}
-                                        className={`py-3 px-2 rounded-xl border text-base font-bold transition-all duration-200 ${
-                                            selectedAmount === amt && !customAmount
-                                                ? "bg-teal-500/20 border-teal-500 text-teal-400 shadow-md shadow-teal-500/10 scale-105"
-                                                : "bg-slate-800/50 border-slate-700 text-slate-300 hover:border-teal-500/50 hover:bg-slate-800"
-                                        }`}
+                                        key={pm.id}
+                                        onClick={() => setPaymentMethod(pm.id)}
+                                        className="bg-slate-950 border border-slate-800 hover:border-teal-500/50 rounded-xl p-4 flex flex-col items-center justify-center gap-3 transition-all hover:bg-slate-900 group"
                                     >
-                                        {amt} د.ل
+                                        <div className={`p-3 rounded-full bg-slate-900 group-hover:bg-slate-800 ${pm.color}`}>
+                                            <pm.icon className="h-6 w-6" />
+                                        </div>
+                                        <span className="text-slate-300 font-bold text-sm">{pm.name}</span>
                                     </button>
                                 ))}
                             </div>
                         </div>
-                        
-                        <div>
-                            <div className="relative">
-                                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">$</span>
-                                <Input
-                                    type="number"
-                                    placeholder="مبلغ مخصص..."
-                                    value={customAmount}
-                                    onChange={(e) => { setCustomAmount(e.target.value); setSelectedAmount(0); }}
-                                    className="pr-8 pl-4 bg-slate-950 border-slate-700 text-white focus:border-teal-500 focus:ring-teal-500/20 h-12 text-lg text-left"
-                                    min="1"
-                                    dir="ltr"
-                                />
+                    ) : (
+                        <div className="space-y-6 py-4">
+                            <div className="text-center mb-6">
+                                <h3 className="text-teal-400 text-lg font-bold">الشحن بخدمة {paymentMethod}</h3>
                             </div>
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="text-sm font-medium text-slate-300 block mb-2">
+                                        {paymentMethod === "ادفع لي" ? "رقم الهاتف (10 أرقام)" : "رقم البطاقة"}
+                                    </label>
+                                    <Input
+                                        type="text"
+                                        placeholder={paymentMethod === "ادفع لي" ? "09X XXX XXXX" : "أدخل رقم البطاقة..."}
+                                        value={paymentRef}
+                                        onChange={(e) => setPaymentRef(e.target.value)}
+                                        className="bg-slate-950 border-slate-700 text-white focus:border-teal-500 focus:ring-teal-500/20 h-12 text-center text-lg tracking-widest"
+                                        dir="ltr"
+                                        maxLength={paymentMethod === "ادفع لي" ? 10 : 20}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-sm font-medium text-slate-300 block mb-2">القيمة (د.ل)</label>
+                                    <Input
+                                        type="number"
+                                        placeholder="أدخل القيمة..."
+                                        value={customAmount}
+                                        onChange={(e) => { setCustomAmount(e.target.value); setSelectedAmount(0); }}
+                                        className="bg-slate-950 border-slate-700 text-white focus:border-teal-500 focus:ring-teal-500/20 h-12 text-center text-lg font-bold"
+                                        min="1"
+                                        dir="ltr"
+                                    />
+                                </div>
+                                {customAmount && parseFloat(customAmount) > 0 && (
+                                    <div className="bg-teal-500/10 border border-teal-500/30 rounded-xl p-4 flex justify-between items-center animate-fade-in">
+                                        <span className="text-slate-300 font-medium">سيتم شحن رصيدك بقيمة:</span>
+                                        <span className="text-teal-400 font-extrabold text-xl">{parseFloat(customAmount).toFixed(2)} د.ل</span>
+                                    </div>
+                                )}
+                            </div>
+                            
+                            <DialogFooter className="gap-3 sm:gap-2 flex-col sm:flex-row mt-6">
+                                <Button
+                                    variant="outline"
+                                    onClick={() => { setPaymentMethod(null); setPaymentRef(""); setCustomAmount(""); }}
+                                    className="border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white w-full sm:w-auto"
+                                >
+                                    رجوع
+                                </Button>
+                                <Button
+                                    onClick={handleAddBalance}
+                                    disabled={isAddingBalance || !paymentRef || !customAmount || parseFloat(customAmount) <= 0}
+                                    className="bg-gradient-to-l from-teal-500 to-cyan-500 hover:from-teal-400 hover:to-cyan-400 text-slate-900 font-bold w-full sm:w-auto shadow-lg shadow-teal-500/20"
+                                >
+                                    {isAddingBalance ? (
+                                        <><Loader2 className="ml-2 h-4 w-4 animate-spin" /> جاري المعالجة...</>
+                                    ) : (
+                                        "ارسال"
+                                    )}
+                                </Button>
+                            </DialogFooter>
                         </div>
-                        
-                        {effectiveAmount > 0 && (
-                            <div className="bg-teal-500/10 border border-teal-500/30 rounded-xl p-4 flex justify-between items-center animate-fade-in">
-                                <span className="text-slate-300 font-medium">سيتم شحن رصيدك بقيمة:</span>
-                                <span className="text-teal-400 font-extrabold text-2xl">{effectiveAmount.toFixed(2)} د.ل</span>
-                            </div>
-                        )}
-                    </div>
-                    
-                    <DialogFooter className="gap-3 sm:gap-2 flex-col sm:flex-row">
-                        <Button
-                            variant="outline"
-                            onClick={() => setDialogOpen(false)}
-                            className="border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white w-full sm:w-auto"
-                        >
-                            {t('profile.cancel')}
-                        </Button>
-                        <Button
-                            onClick={handleAddBalance}
-                            disabled={isAddingBalance || effectiveAmount <= 0}
-                            className="bg-gradient-to-l from-teal-500 to-cyan-500 hover:from-teal-400 hover:to-cyan-400 text-slate-900 font-bold w-full sm:w-auto shadow-lg shadow-teal-500/20"
-                        >
-                            {isAddingBalance ? (
-                                <><Loader2 className="ml-2 h-4 w-4 animate-spin" /> جاري المعالجة...</>
-                            ) : (
-                                t('profile.confirm')
-                            )}
-                        </Button>
-                    </DialogFooter>
+                    )}
                 </DialogContent>
             </Dialog>
         </Layout>

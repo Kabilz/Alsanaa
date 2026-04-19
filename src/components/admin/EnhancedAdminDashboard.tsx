@@ -17,11 +17,12 @@ import {
   Plus,
   FileText,
   RotateCcw,
-  Settings
+  Banknote
 } from "lucide-react";
 
 import { AdminPdfs } from "@/components/admin/AdminPdfs";
-import { SiteSettings } from "@/components/admin/SiteSettings";
+import { RevenueStatement } from "@/components/admin/RevenueStatement";
+import { TeacherStatement } from "@/components/admin/TeacherStatement";
 import { CourseList } from "@/components/CourseList";
 import { CourseForm } from "@/components/CourseForm";
 import { QuizManager } from "@/components/QuizManager";
@@ -92,6 +93,10 @@ export function EnhancedAdminDashboard() {
                 <DollarSign className="h-4 w-4 ml-2 text-emerald-500/80" />
                 <span>المالية</span>
               </TabsTrigger>
+              <TabsTrigger value="revenues" className="data-[state=active]:bg-emerald-500/20 data-[state=active]:text-emerald-400 data-[state=active]:shadow-sm rounded-xl py-2.5 px-5 font-semibold transition-all whitespace-nowrap">
+                <Banknote className="h-4 w-4 ml-2" />
+                <span>كشف الإيرادات</span>
+              </TabsTrigger>
               <TabsTrigger value="student_balances" className="data-[state=active]:bg-cyan-500/20 data-[state=active]:text-cyan-400 data-[state=active]:shadow-sm rounded-xl py-2.5 px-5 font-semibold transition-all whitespace-nowrap">
                 <CreditCard className="h-4 w-4 ml-2" />
                 <span>أرصدة الطلاب</span>
@@ -99,6 +104,10 @@ export function EnhancedAdminDashboard() {
               <TabsTrigger value="teacher_balances" className="data-[state=active]:bg-cyan-500/20 data-[state=active]:text-cyan-400 data-[state=active]:shadow-sm rounded-xl py-2.5 px-5 font-semibold transition-all whitespace-nowrap">
                 <CreditCard className="h-4 w-4 ml-2" />
                 <span>أرصدة المعلمين</span>
+              </TabsTrigger>
+              <TabsTrigger value="teacher_statement" className="data-[state=active]:bg-teal-500/20 data-[state=active]:text-teal-400 data-[state=active]:shadow-sm rounded-xl py-2.5 px-5 font-semibold transition-all whitespace-nowrap">
+                <FileText className="h-4 w-4 ml-2" />
+                <span>كشف حساب المعلمين</span>
               </TabsTrigger>
               <TabsTrigger value="announcements" className="data-[state=active]:bg-teal-500/20 data-[state=active]:text-teal-400 data-[state=active]:shadow-sm rounded-xl py-2.5 px-5 font-semibold transition-all whitespace-nowrap">
                 <Megaphone className="h-4 w-4 ml-2" />
@@ -118,10 +127,6 @@ export function EnhancedAdminDashboard() {
                 <RotateCcw className="h-4 w-4 ml-2" />
                 <span>المبالغ المستردة</span>
               </TabsTrigger>
-              <TabsTrigger value="settings" className="data-[state=active]:bg-teal-500/20 data-[state=active]:text-teal-400 data-[state=active]:shadow-sm rounded-xl py-2.5 px-5 font-semibold transition-all whitespace-nowrap">
-                <Settings className="h-4 w-4 ml-2" />
-                <span>الإعدادات</span>
-              </TabsTrigger>
             </TabsList>
           </div>
 
@@ -138,12 +143,20 @@ export function EnhancedAdminDashboard() {
               <FinancialDashboard />
             </TabsContent>
 
+            <TabsContent value="revenues" className="mt-0 outline-none">
+              <RevenueStatement />
+            </TabsContent>
+
             <TabsContent value="student_balances" className="mt-0 outline-none">
               <StudentBalances />
             </TabsContent>
 
             <TabsContent value="teacher_balances" className="mt-0 outline-none">
               <TeacherBalances />
+            </TabsContent>
+
+            <TabsContent value="teacher_statement" className="mt-0 outline-none">
+              <TeacherStatement />
             </TabsContent>
 
             <TabsContent value="announcements" className="mt-0 outline-none">
@@ -156,10 +169,6 @@ export function EnhancedAdminDashboard() {
 
             <TabsContent value="refunds" className="mt-0 outline-none">
               <RefundManagement />
-            </TabsContent>
-
-            <TabsContent value="settings" className="mt-0 outline-none">
-              <SiteSettings />
             </TabsContent>
 
             <TabsContent value="courses" className="mt-0 outline-none">

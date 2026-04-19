@@ -143,6 +143,7 @@ const CourseViewer = () => {
                 controls 
                 className="w-full h-full object-contain bg-black"
                 controlsList="nodownload"
+                onContextMenu={(e) => e.preventDefault()}
                 poster={course.image_url || "https://images.unsplash.com/photo-1550439062-609e1531270e?w=1600&h=900&fit=crop&q=80"}
               >
                 متصفحك لا يدعم تشغيل الفيديو.

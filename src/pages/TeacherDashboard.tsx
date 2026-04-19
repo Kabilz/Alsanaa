@@ -236,12 +236,12 @@ const TeacherDashboard = () => {
     setUploadingAvatar(true);
     try {
       const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}-${Math.random()}.${fileExt}`;
-      const filePath = `${fileName}`;
+      // Use a fixed filename per user so the URL stays the same after each upload
+      const filePath = `teacher-${user.id}.${fileExt}`;
 
       const { error: uploadError } = await supabase.storage
         .from('avatars')
-        .upload(filePath, file);
+        .upload(filePath, file, { upsert: true });
 
       if (uploadError) throw uploadError;
 
@@ -249,9 +249,12 @@ const TeacherDashboard = () => {
         .from('avatars')
         .getPublicUrl(filePath);
 
+      // Append a cache-busting timestamp so browsers/CDNs reload the image
+      const bustUrl = `${publicUrl}?t=${Date.now()}`;
+
       const { error: updateError } = await supabase
         .from('profiles')
-        .update({ avatar_url: publicUrl })
+        .update({ avatar_url: bustUrl })
         .eq('id', user.id);
 
       if (updateError) throw updateError;
@@ -260,7 +263,7 @@ const TeacherDashboard = () => {
         ...prev,
         profiles: {
           ...prev.profiles,
-          avatar_url: publicUrl
+          avatar_url: bustUrl
         }
       } : null);
 

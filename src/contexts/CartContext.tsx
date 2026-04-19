@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 export interface CartItem {
   id: string;
@@ -35,8 +36,20 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   });
 
   useEffect(() => {
-    localStorage.setItem("course-cart", JSON.stringify(items));
+    if (items.length > 0 || localStorage.getItem("course-cart")) {
+      localStorage.setItem("course-cart", JSON.stringify(items));
+    }
   }, [items]);
+
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_OUT') {
+        setItems([]);
+        localStorage.removeItem("course-cart");
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, []);
 
   const addToCart = (item: CartItem) => {
     setItems((prev) => {
