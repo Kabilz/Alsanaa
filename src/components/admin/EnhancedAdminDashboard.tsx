@@ -17,12 +17,14 @@ import {
   Plus,
   FileText,
   RotateCcw,
-  Banknote
+  Banknote,
+  GraduationCap
 } from "lucide-react";
 
 import { AdminPdfs } from "@/components/admin/AdminPdfs";
 import { RevenueStatement } from "@/components/admin/RevenueStatement";
 import { TeacherStatement } from "@/components/admin/TeacherStatement";
+import { EducationalLevelsManager } from "@/components/admin/EducationalLevelsManager";
 import { CourseList } from "@/components/CourseList";
 import { CourseForm } from "@/components/CourseForm";
 import { QuizManager } from "@/components/QuizManager";
@@ -30,7 +32,7 @@ import { Button } from "@/components/ui/button";
 
 export function EnhancedAdminDashboard() {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState("overview");
+  const [activeTab, setActiveTab] = useState("users");
   const [courseView, setCourseView] = useState<"list" | "add" | "edit" | "quiz">("list");
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
 
@@ -80,11 +82,6 @@ export function EnhancedAdminDashboard() {
           {/* Scrollable Tabs List */}
           <div className="overflow-x-auto pb-4 scrollbar-hide">
             <TabsList className="bg-slate-900/60 border border-teal-900/30 w-max min-w-full justify-start p-1.5 rounded-2xl flex-nowrap h-14 gap-2">
-              <TabsTrigger value="overview" className="data-[state=active]:bg-teal-500/20 data-[state=active]:text-teal-400 data-[state=active]:shadow-sm rounded-xl py-2.5 px-5 font-semibold transition-all whitespace-nowrap">
-                <BarChart3 className="h-4 w-4 ml-2 rtl:mx-0 rtl:ml-2" />
-                <span className="hidden sm:inline">نظرة عامة</span>
-                <span className="sm:hidden">عامة</span>
-              </TabsTrigger>
               <TabsTrigger value="users" className="data-[state=active]:bg-teal-500/20 data-[state=active]:text-teal-400 data-[state=active]:shadow-sm rounded-xl py-2.5 px-5 font-semibold transition-all whitespace-nowrap">
                 <Users className="h-4 w-4 ml-2" />
                 <span>المستخدمين</span>
@@ -127,14 +124,15 @@ export function EnhancedAdminDashboard() {
                 <RotateCcw className="h-4 w-4 ml-2" />
                 <span>المبالغ المستردة</span>
               </TabsTrigger>
+              <TabsTrigger value="levels" className="data-[state=active]:bg-teal-500/20 data-[state=active]:text-teal-400 data-[state=active]:shadow-sm rounded-xl py-2.5 px-5 font-semibold transition-all whitespace-nowrap">
+                <GraduationCap className="h-4 w-4 ml-2" />
+                <span className="hidden sm:inline">المراحل الدراسية</span>
+                <span className="sm:hidden">المراحل</span>
+              </TabsTrigger>
             </TabsList>
           </div>
 
           <div className="mt-8 animate-slide-up">
-            <TabsContent value="overview" className="mt-0 outline-none">
-              <FinancialDashboard />
-            </TabsContent>
-
             <TabsContent value="users" className="mt-0 outline-none">
               <UserManagement />
             </TabsContent>
@@ -169,6 +167,10 @@ export function EnhancedAdminDashboard() {
 
             <TabsContent value="refunds" className="mt-0 outline-none">
               <RefundManagement />
+            </TabsContent>
+
+            <TabsContent value="levels" className="mt-0 outline-none">
+              <EducationalLevelsManager />
             </TabsContent>
 
             <TabsContent value="courses" className="mt-0 outline-none">

@@ -10,6 +10,7 @@ import { Loader2, ArrowRight, GraduationCap, PlayCircle } from "lucide-react";
 interface Course {
   id: string;
   title: string;
+  price: number;
   video_url: string | null;
   image_url: string | null;
   teacher_id: string | null;
@@ -39,7 +40,7 @@ const CourseViewer = () => {
       try {
         const { data: courseData, error: courseError } = await supabase
           .from("courses")
-          .select("id, title, video_url, image_url, teacher_id")
+          .select("id, title, price, video_url, image_url, teacher_id")
           .eq("id", id)
           .single();
 
@@ -53,6 +54,13 @@ const CourseViewer = () => {
         setCourse(courseWithTeacher);
 
         if (userRole === 'admin' || user.id === courseWithTeacher.teacher_id) {
+          setHasAccess(true);
+          setLoading(false);
+          return;
+        }
+
+        // Free courses are open to all logged-in users
+        if (courseWithTeacher.price === 0) {
           setHasAccess(true);
           setLoading(false);
           return;

@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, Plus, Download, CreditCard } from "lucide-react";
 import { toast } from "sonner";
 import { formatCurrency } from "@/lib/utils";
+import * as XLSX from 'xlsx';
 
 interface PrepaidCard {
   id: string;
@@ -97,28 +98,23 @@ export function CardManagement() {
     setGenerating(false);
   };
 
-  const exportToCSV = () => {
-    const csv = [
-      ['الرقم التسلسلي', 'الكود السري', 'القيمة', 'الحالة', 'تاريخ الإنشاء'].join(','),
+  const exportToExcel = () => {
+    const data = [
+      ['الرقم التسلسلي', 'الكود السري', 'القيمة', 'الحالة', 'تاريخ الإنشاء'],
       ...cards.map(card => [
         card.serial_number,
         card.secret_code,
         card.value,
         translateStatus(card.status),
         new Date(card.created_at).toLocaleDateString('ar-EG')
-      ].join(','))
-    ].join('\n');
+      ])
+    ];
 
-    const blob = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), csv], { type: 'text/csv;charset=utf-8;' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.setAttribute('hidden', '');
-    a.setAttribute('href', url);
-    a.setAttribute('download', `البطاقات_${Date.now()}.csv`);
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    toast.success("تم تصدير البطاقات إلى ملف CSV");
+    const ws = XLSX.utils.aoa_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "البطاقات");
+    XLSX.writeFile(wb, `البطاقات_${Date.now()}.xlsx`);
+    toast.success("تم تصدير البطاقات إلى ملف Excel");
   };
 
   const getStatusBadgeVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
@@ -155,12 +151,12 @@ export function CardManagement() {
           <div className="flex gap-3 w-full md:w-auto">
             <Button 
               variant="outline" 
-              onClick={exportToCSV} 
+              onClick={exportToExcel} 
               disabled={cards.length === 0} 
               className="flex-1 md:flex-none border-slate-700 text-slate-300 hover:bg-slate-800"
             >
               <Download className="ml-2 h-4 w-4" />
-              تصدير CSV
+              تصدير Excel
             </Button>
             <Dialog open={openDialog} onOpenChange={setOpenDialog}>
               <DialogTrigger asChild>

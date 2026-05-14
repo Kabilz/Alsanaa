@@ -73,7 +73,7 @@ export function CourseForm({ courseId, fixedTeacherId, onSuccess, onCancel }: Co
       setVideoUrl(course.video_url);
       setImageUrl(course.image_url || null);
       setTeacherId(course.teacher_id || "");
-      
+
       if (course.educational_years?.level_id) {
         setSelectedLevelId(course.educational_years.level_id);
       } else if (course.departments?.college_id) {
@@ -207,8 +207,8 @@ export function CourseForm({ courseId, fixedTeacherId, onSuccess, onCancel }: Co
     e.preventDefault();
 
     if (!titleAr && !title) {
-       toast.error("مطلوب إدخال عنوان الدورة");
-       return;
+      toast.error("مطلوب إدخال عنوان الدورة");
+      return;
     }
 
     const uploadedVideoUrl = await uploadVideo();
@@ -327,39 +327,39 @@ export function CourseForm({ courseId, fixedTeacherId, onSuccess, onCancel }: Co
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-5 bg-slate-800/20 rounded-xl border border-slate-800">
-             <div className="space-y-2">
-               <Label htmlFor="price" className="text-slate-300">السعر (بالدينار الليبي)</Label>
-               <Input
-                 id="price"
-                 type="number"
-                 step="0.01"
-                 min="0"
-                 placeholder="0.00"
-                 value={price}
-                 onChange={(e) => setPrice(e.target.value)}
-                 required
-                 className="bg-slate-800/80 border-slate-700 text-white"
-               />
-               <p className="text-xs text-slate-500">أدخل (0) لجعل الدورة مجانية.</p>
-             </div>
+            <div className="space-y-2">
+              <Label htmlFor="price" className="text-slate-300">السعر (بالدينار الليبي)</Label>
+              <Input
+                id="price"
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="0.00"
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
+                required
+                className="bg-slate-800/80 border-slate-700 text-white"
+              />
+              <p className="text-xs text-slate-500">أدخل (0) لجعل الدورة مجانية.</p>
+            </div>
 
-             {!fixedTeacherId && (
-               <div className="space-y-2">
-                 <Label htmlFor="teacher" className="text-slate-300">المعلم المسؤول</Label>
-                 <Select value={teacherId} onValueChange={setTeacherId}>
-                   <SelectTrigger className="bg-slate-800/80 border-slate-700 text-slate-200">
-                     <SelectValue placeholder="اختر المعلم الذي يقدم هذه الدورة..." />
-                   </SelectTrigger>
-                   <SelectContent className="bg-slate-800 border-slate-700 text-right" dir="rtl">
-                     {teachers?.map((teacher) => (
-                       <SelectItem key={teacher.id} value={teacher.id} className="focus:bg-slate-700 cursor-pointer">
-                         {teacher.full_name || (teacher as any).full_name_ar}
-                       </SelectItem>
-                     ))}
-                   </SelectContent>
-                 </Select>
-               </div>
-             )}
+            {!fixedTeacherId && (
+              <div className="space-y-2">
+                <Label htmlFor="teacher" className="text-slate-300">المعلم المسؤول</Label>
+                <Select value={teacherId} onValueChange={setTeacherId}>
+                  <SelectTrigger className="bg-slate-800/80 border-slate-700 text-slate-200">
+                    <SelectValue placeholder="اختر المعلم الذي يقدم هذه الدورة..." />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-800 border-slate-700 text-right" dir="rtl">
+                    {teachers?.map((teacher) => (
+                      <SelectItem key={teacher.id} value={teacher.id} className="focus:bg-slate-700 cursor-pointer">
+                        {teacher.full_name || (teacher as any).full_name_ar}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
           </div>
 
           <div className="border-t border-slate-800/50 pt-6 mt-6">
@@ -443,57 +443,57 @@ export function CourseForm({ courseId, fixedTeacherId, onSuccess, onCancel }: Co
           </div>
 
           <div className="space-y-3">
-             <Label className="text-slate-300">صورة الدورة (صورة مصغرة) <span className="text-slate-500 text-xs">(اختياري)</span></Label>
-             {imageUrl ? (
-               <div className="relative rounded-2xl overflow-hidden border border-slate-700/50 bg-slate-900 group max-w-sm">
-                 <img
-                   src={imageUrl}
-                   alt="Course Thumbnail"
-                   className="w-full aspect-video object-cover"
-                 />
-                 <Button
-                   type="button"
-                   variant="destructive"
-                   size="icon"
-                   className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity bg-rose-600 hover:bg-rose-500 text-white border-0 z-10"
-                   onClick={removeImage}
-                 >
-                   <X className="w-4 h-4" />
-                 </Button>
-               </div>
-             ) : (
-               <label className="flex flex-col items-center justify-center h-40 border-2 border-dashed border-slate-700 bg-slate-800/30 rounded-2xl cursor-pointer hover:border-teal-500/50 hover:bg-slate-800/50 transition-all group">
-                 <div className="p-4 bg-slate-800 rounded-full mb-3 group-hover:scale-110 group-hover:bg-slate-700 transition-transform">
-                    <ImageIcon className="w-8 h-8 text-teal-500" />
-                 </div>
-                 <span className="text-sm text-slate-300 font-medium">
-                   انقر لرفع صورة مصغرة للدورة
-                 </span>
-                 <span className="text-xs text-slate-500 mt-2">
-                   يدعم صيغ JPG, PNG, WebP (الحد الأقصى ٥ ميجابايت)
-                 </span>
-                 <input
-                   type="file"
-                   accept="image/*"
-                   onChange={handleImageSelect}
-                   className="hidden"
-                 />
-               </label>
-             )}
-            
-             {uploadingImage && (
-               <div className="space-y-2 pt-2">
-                 <div className="flex justify-between text-xs mb-1">
-                    <span className="text-slate-400">جاري الرفع...</span>
-                    <span className="text-teal-400 font-medium">{Math.round(imageUploadProgress)}%</span>
-                 </div>
-                 <Progress value={imageUploadProgress} className="h-2 bg-slate-800 [&>div]:bg-teal-500" />
-               </div>
-             )}
+            <Label className="text-slate-300">صورة الدورة (صورة مصغرة) <span className="text-slate-500 text-xs">(اختياري)</span></Label>
+            {imageUrl ? (
+              <div className="relative rounded-2xl overflow-hidden border border-slate-700/50 bg-slate-900 group max-w-sm">
+                <img
+                  src={imageUrl}
+                  alt="Course Thumbnail"
+                  className="w-full aspect-video object-cover"
+                />
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="icon"
+                  className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity bg-rose-600 hover:bg-rose-500 text-white border-0 z-10"
+                  onClick={removeImage}
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            ) : (
+              <label className="flex flex-col items-center justify-center h-40 border-2 border-dashed border-slate-700 bg-slate-800/30 rounded-2xl cursor-pointer hover:border-teal-500/50 hover:bg-slate-800/50 transition-all group">
+                <div className="p-4 bg-slate-800 rounded-full mb-3 group-hover:scale-110 group-hover:bg-slate-700 transition-transform">
+                  <ImageIcon className="w-8 h-8 text-teal-500" />
+                </div>
+                <span className="text-sm text-slate-300 font-medium">
+                  انقر لرفع صورة مصغرة للدورة
+                </span>
+                <span className="text-xs text-slate-500 mt-2">
+                  يدعم صيغ JPG, PNG, WebP (الحد الأقصى ٥ ميجابايت)
+                </span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageSelect}
+                  className="hidden"
+                />
+              </label>
+            )}
+
+            {uploadingImage && (
+              <div className="space-y-2 pt-2">
+                <div className="flex justify-between text-xs mb-1">
+                  <span className="text-slate-400">جاري الرفع...</span>
+                  <span className="text-teal-400 font-medium">{Math.round(imageUploadProgress)}%</span>
+                </div>
+                <Progress value={imageUploadProgress} className="h-2 bg-slate-800 [&>div]:bg-teal-500" />
+              </div>
+            )}
           </div>
 
           <div className="space-y-3">
-            <Label className="text-slate-300">الفيديو التوضيحي للدورة <span className="text-slate-500 text-xs">(اختياري)</span></Label>
+            <Label className="text-slate-300">الفيديو ال للدورة <span className="text-slate-500 text-xs">(اختياري)</span></Label>
             {videoUrl ? (
               <div className="relative rounded-2xl overflow-hidden border border-slate-700/50 bg-slate-900 group">
                 <video
@@ -514,10 +514,10 @@ export function CourseForm({ courseId, fixedTeacherId, onSuccess, onCancel }: Co
             ) : (
               <label className="flex flex-col items-center justify-center h-48 border-2 border-dashed border-slate-700 bg-slate-800/30 rounded-2xl cursor-pointer hover:border-teal-500/50 hover:bg-slate-800/50 transition-all group">
                 <div className="p-4 bg-slate-800 rounded-full mb-3 group-hover:scale-110 group-hover:bg-slate-700 transition-transform">
-                   <UploadCloud className="w-8 h-8 text-teal-500" />
+                  <UploadCloud className="w-8 h-8 text-teal-500" />
                 </div>
                 <span className="text-sm text-slate-300 font-medium">
-                  انقر لرفع مقطع فيديو توضيحي
+                  انقر لرفع مقطع فيديو
                 </span>
                 <span className="text-xs text-slate-500 mt-2">
                   يدعم صيغ MP4, WebM (الحد الأقصى ١٠٠ ميجابايت)
@@ -530,12 +530,12 @@ export function CourseForm({ courseId, fixedTeacherId, onSuccess, onCancel }: Co
                 />
               </label>
             )}
-            
+
             {uploading && (
               <div className="space-y-2 pt-2">
                 <div className="flex justify-between text-xs mb-1">
-                   <span className="text-slate-400">جاري الرفع...</span>
-                   <span className="text-teal-400 font-medium">{Math.round(uploadProgress)}%</span>
+                  <span className="text-slate-400">جاري الرفع...</span>
+                  <span className="text-teal-400 font-medium">{Math.round(uploadProgress)}%</span>
                 </div>
                 <Progress value={uploadProgress} className="h-2 bg-slate-800 [&>div]:bg-teal-500" />
               </div>

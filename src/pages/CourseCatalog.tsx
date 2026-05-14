@@ -26,7 +26,8 @@ import {
   Search,
   SlidersHorizontal,
   ShoppingCart,
-  ChevronLeft
+  ChevronLeft,
+  PlayCircle
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
@@ -211,7 +212,7 @@ const CourseCatalog = () => {
   const renderContent = () => {
     if (!selectedLevel) return null;
 
-    if (['elementary', 'middle', 'secondary'].includes(selectedLevel.slug)) {
+    if (selectedLevel.slug !== 'university') {
       if (!selectedYearId) {
         return (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" dir="rtl">
@@ -390,36 +391,47 @@ const CourseCatalog = () => {
 
                   {/* Footer */}
                   <CardFooter className="flex gap-2">
-                    {isInCart(course.id) ? (
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="shrink-0 text-teal-400 bg-teal-500/10 hover:bg-teal-500/20"
-                        onClick={() => removeFromCart(course.id)}
-                        title="إزالة من السلة"
-                      >
-                        <ShoppingCart className="h-5 w-5" />
-                      </Button>
+                    {course.price === 0 ? (
+                      <Link to={`/courses/${course.id}/learn`} className="flex-1">
+                        <Button className="w-full bg-gradient-to-l from-teal-500 to-cyan-500 hover:from-teal-400 hover:to-cyan-400 text-slate-900 font-bold">
+                          <PlayCircle className="ml-2 h-4 w-4" />
+                          ابدأ الآن مجاناً
+                        </Button>
+                      </Link>
                     ) : (
-                      <Button 
-                        variant="outline" 
-                        size="icon" 
-                        className="shrink-0 border-primary/20 hover:bg-primary/10 text-primary"
-                        onClick={() => addToCart({
-                          id: course.id,
-                          title: course.title_ar || course.title,
-                          price: course.price,
-                          image_url: course.image_url,
-                          teacher_name: course.teacher?.full_name
-                        })}
-                        title="أضف إلى السلة"
-                      >
-                        <ShoppingCart className="h-5 w-5" />
-                      </Button>
+                      <>
+                        {isInCart(course.id) ? (
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="shrink-0 text-teal-400 bg-teal-500/10 hover:bg-teal-500/20"
+                            onClick={() => removeFromCart(course.id)}
+                            title="إزالة من السلة"
+                          >
+                            <ShoppingCart className="h-5 w-5" />
+                          </Button>
+                        ) : (
+                          <Button 
+                            variant="outline" 
+                            size="icon" 
+                            className="shrink-0 border-primary/20 hover:bg-primary/10 text-primary"
+                            onClick={() => addToCart({
+                              id: course.id,
+                              title: course.title_ar || course.title,
+                              price: course.price,
+                              image_url: course.image_url,
+                              teacher_name: course.teacher?.full_name
+                            })}
+                            title="أضف إلى السلة"
+                          >
+                            <ShoppingCart className="h-5 w-5" />
+                          </Button>
+                        )}
+                        <Link to={`/courses/${course.id}`} className="flex-1">
+                          <Button className="w-full">{t("course_catalog.view_details")}</Button>
+                        </Link>
+                      </>
                     )}
-                    <Link to={`/courses/${course.id}`} className="flex-1">
-                      <Button className="w-full">{t("course_catalog.view_details")}</Button>
-                    </Link>
                   </CardFooter>
                 </Card>
               ))}

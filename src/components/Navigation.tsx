@@ -1,7 +1,7 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { LogOut, BookOpen, Megaphone, Mail, User, Menu, Home } from "lucide-react";
+import { LogOut, BookOpen, Megaphone, Mail, User, Menu, Home, Smartphone } from "lucide-react";
 import { toast } from "sonner";
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
@@ -79,6 +79,12 @@ export function Navigation() {
         <button className={navLinkClass("/contact")}>
           <Mail className="h-4 w-4 shrink-0" />
           {t("nav.contact")}
+        </button>
+      </Link>
+      <Link to="/install" onClick={() => setIsOpen(false)}>
+        <button className={navLinkClass("/install")}>
+          <Smartphone className="h-4 w-4 shrink-0 text-teal-400" />
+          التطبيق
         </button>
       </Link>
     </>

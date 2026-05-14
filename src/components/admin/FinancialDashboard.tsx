@@ -199,7 +199,9 @@ export function FinancialDashboard() {
                            {formatCurrency(transaction.amount)}
                         </TableCell>
                         <TableCell className="text-slate-300">
-                          {translateMethod(transaction.payment_method || '') || 'غير محدد'}
+                          {transaction.payment_method === 'topup' && transaction.payment_service 
+                            ? transaction.payment_service 
+                            : translateMethod(transaction.payment_method || '') || 'غير محدد'}
                         </TableCell>
                         <TableCell>
                           <Badge variant={getStatusBadgeVariant(transaction.status)} className="px-3 py-1 font-semibold">

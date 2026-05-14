@@ -5,12 +5,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FileDown, Search, Filter, Loader2, Banknote, Receipt } from "lucide-react";
+import { FileDown, Search, Filter, Loader2, Banknote, Receipt, Calendar as CalendarIcon } from "lucide-react";
 import { toast } from "sonner";
+import * as XLSX from 'xlsx';
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 export const RevenueStatement = () => {
-    const [dateFrom, setDateFrom] = useState("");
-    const [dateTo, setDateTo] = useState("");
+    const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
+    const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
     const [serviceFilter, setServiceFilter] = useState("all");
 
     const { data: revenues, isLoading } = useQuery({
@@ -26,7 +31,7 @@ export const RevenueStatement = () => {
                 .order("created_at", { ascending: false });
 
             if (dateFrom) {
-                query = query.gte("created_at", new Date(dateFrom).toISOString());
+                query = query.gte("created_at", dateFrom.toISOString());
             }
             if (dateTo) {
                 const endOfDay = new Date(dateTo);
@@ -58,23 +63,19 @@ export const RevenueStatement = () => {
         const headers = ["رقم الحركة", "التاريخ", "القيمة", "اسم الخدمة", "اسم الطالب", "رقم الهاتف", "الحالة"];
         const rows = revenues.map(tx => [
             tx.id,
-            new Date(tx.created_at).toLocaleDateString('ar-EG'),
-            tx.amount.toString(),
+            format(new Date(tx.created_at), "dd/MM/yyyy HH:mm"),
+            tx.amount,
             tx.payment_service || 'غير محدد',
             tx.profiles?.full_name || 'غير محدد',
             tx.profiles?.phone || 'غير محدد',
             tx.status === 'completed' ? 'مكتملة' : tx.status
         ]);
 
-        const csvContent = "\uFEFF" + [headers, ...rows].map(e => e.join(",")).join("\n");
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.setAttribute("href", url);
-        link.setAttribute("download", `كشف_الإيرادات_${new Date().toISOString().split('T')[0]}.csv`);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        const data = [headers, ...rows];
+        const ws = XLSX.utils.aoa_to_sheet(data);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "الإيرادات");
+        XLSX.writeFile(wb, `كشف_الإيرادات_${new Date().toISOString().split('T')[0]}.xlsx`);
     };
 
     return (
@@ -109,21 +110,55 @@ export const RevenueStatement = () => {
                     <div className="flex flex-col md:flex-row gap-4 items-end">
                         <div className="flex-1 space-y-1">
                             <label className="text-xs text-slate-400 font-medium">من تاريخ</label>
-                            <Input 
-                                type="date" 
-                                value={dateFrom} 
-                                onChange={(e) => setDateFrom(e.target.value)}
-                                className="bg-slate-950 border-slate-800 text-slate-200"
-                            />
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <Button
+                                        variant={"outline"}
+                                        className={cn(
+                                            "w-full justify-start text-right font-normal bg-slate-950 border-slate-800 text-slate-200 hover:bg-slate-900 hover:text-white",
+                                            !dateFrom && "text-slate-400"
+                                        )}
+                                    >
+                                        <CalendarIcon className="ml-2 h-4 w-4 text-slate-500" />
+                                        {dateFrom ? format(dateFrom, "dd/MM/yyyy") : <span>اختر البداية</span>}
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0 bg-slate-900 border-slate-800">
+                                    <Calendar
+                                        mode="single"
+                                        selected={dateFrom}
+                                        onSelect={setDateFrom}
+                                        initialFocus
+                                        className="bg-slate-900 text-white"
+                                    />
+                                </PopoverContent>
+                            </Popover>
                         </div>
                         <div className="flex-1 space-y-1">
                             <label className="text-xs text-slate-400 font-medium">إلى تاريخ</label>
-                            <Input 
-                                type="date" 
-                                value={dateTo} 
-                                onChange={(e) => setDateTo(e.target.value)}
-                                className="bg-slate-950 border-slate-800 text-slate-200"
-                            />
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <Button
+                                        variant={"outline"}
+                                        className={cn(
+                                            "w-full justify-start text-right font-normal bg-slate-950 border-slate-800 text-slate-200 hover:bg-slate-900 hover:text-white",
+                                            !dateTo && "text-slate-400"
+                                        )}
+                                    >
+                                        <CalendarIcon className="ml-2 h-4 w-4 text-slate-500" />
+                                        {dateTo ? format(dateTo, "dd/MM/yyyy") : <span>اختر النهاية</span>}
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0 bg-slate-900 border-slate-800">
+                                    <Calendar
+                                        mode="single"
+                                        selected={dateTo}
+                                        onSelect={setDateTo}
+                                        initialFocus
+                                        className="bg-slate-900 text-white"
+                                    />
+                                </PopoverContent>
+                            </Popover>
                         </div>
                         <div className="flex-1 space-y-1">
                             <label className="text-xs text-slate-400 font-medium">بوابة الدفع (اسم المصرف)</label>
@@ -143,7 +178,7 @@ export const RevenueStatement = () => {
                         {(dateFrom || dateTo || serviceFilter !== "all") && (
                             <Button 
                                 variant="outline" 
-                                onClick={() => { setDateFrom(""); setDateTo(""); setServiceFilter("all"); }}
+                                onClick={() => { setDateFrom(undefined); setDateTo(undefined); setServiceFilter("all"); }}
                                 className="border-slate-700 text-slate-300 hover:bg-slate-800"
                             >
                                 <Filter className="ml-2 h-4 w-4" />
@@ -172,7 +207,7 @@ export const RevenueStatement = () => {
                                     revenues.map((tx) => (
                                         <tr key={tx.id} className="hover:bg-slate-800/30 transition-colors text-slate-300">
                                             <td className="p-4 text-xs font-mono text-slate-500">{tx.id.split('-')[0]}</td>
-                                            <td className="p-4 whitespace-nowrap text-sm" dir="ltr">{new Date(tx.created_at).toLocaleDateString('ar-EG', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit' })}</td>
+                                            <td className="p-4 whitespace-nowrap text-sm" dir="ltr">{format(new Date(tx.created_at), "dd/MM/yyyy HH:mm")}</td>
                                             <td className="p-4">
                                                 <div className="font-medium text-slate-200">{tx.profiles?.full_name || 'غير محدد'}</div>
                                                 <div className="text-xs text-slate-500">{tx.profiles?.phone}</div>

@@ -240,7 +240,7 @@ export default function Browse() {
   const renderContent = () => {
     if (!selectedLevel) return null;
 
-    if (['elementary', 'middle', 'secondary'].includes(selectedLevel.slug)) {
+    if (selectedLevel.slug !== 'university') {
       if (!selectedYearId) {
         return (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">

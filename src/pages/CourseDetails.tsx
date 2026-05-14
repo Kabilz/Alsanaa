@@ -325,7 +325,7 @@ const CourseDetails = () => {
                    </div>
                 </CardHeader>
                 <CardContent className="pt-6 pb-6 relative z-10 space-y-4">
-                   {user && !hasPurchased && (
+                   {user && !hasPurchased && course.price > 0 && (
                        <div className="flex items-center justify-between text-sm bg-slate-950/60 p-3 rounded-xl border border-slate-800">
                            <div className="flex items-center text-slate-300">
                              <Wallet className="w-5 h-5 ml-2 text-indigo-400" />
@@ -351,60 +351,66 @@ const CourseDetails = () => {
                    </ul>
                 </CardContent>
                 <CardFooter className="flex-col gap-3 pb-8 relative z-10">
-                   {hasPurchased ? (
-                     <Button size="lg" onClick={startLearning} className="w-full bg-gradient-to-l from-teal-500 to-cyan-500 hover:from-teal-400 hover:to-cyan-400 text-slate-900 font-bold shadow-lg shadow-teal-500/25">
-                       <PlayCircle className="ml-2 h-5 w-5" />
-                       ابدأ التعلم الآن
-                     </Button>
-                   ) : (
-                     <>
-                       {isInCart(course.id) ? (
-                         <Button 
-                            size="lg" 
-                            variant="outline"
-                            className="w-full border-teal-500 text-teal-400 hover:bg-teal-950/30 font-bold"
-                            onClick={() => removeFromCart(course.id)}
-                         >
-                            <ShoppingCart className="ml-2 h-5 w-5" />
-                            إزالة من السلة
-                         </Button>
-                       ) : (
-                         <Button 
-                            size="lg" 
-                            onClick={() => addToCart({
-                              id: course.id,
-                              title: course.title_ar || course.title,
-                              price: course.price,
-                              image_url: course.image_url,
-                              teacher_name: course.teacher?.full_name
-                            })} 
-                            className="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold border border-slate-700"
-                         >
-                           <ShoppingCart className="ml-2 h-5 w-5" />
-                           أضف إلى السلة
-                         </Button>
-                       )}
+                    {/* Free course — direct access */}
+                    {course.price === 0 ? (
+                      <Button size="lg" onClick={startLearning} className="w-full bg-gradient-to-l from-teal-500 to-cyan-500 hover:from-teal-400 hover:to-cyan-400 text-slate-900 font-bold shadow-lg shadow-teal-500/25">
+                        <PlayCircle className="ml-2 h-5 w-5" />
+                        ابدأ التعلم مجاناً
+                      </Button>
+                    ) : hasPurchased ? (
+                      <Button size="lg" onClick={startLearning} className="w-full bg-gradient-to-l from-teal-500 to-cyan-500 hover:from-teal-400 hover:to-cyan-400 text-slate-900 font-bold shadow-lg shadow-teal-500/25">
+                        <PlayCircle className="ml-2 h-5 w-5" />
+                        ابدأ التعلم الآن
+                      </Button>
+                    ) : (
+                      <>
+                        {isInCart(course.id) ? (
+                          <Button 
+                             size="lg" 
+                             variant="outline"
+                             className="w-full border-teal-500 text-teal-400 hover:bg-teal-950/30 font-bold"
+                             onClick={() => removeFromCart(course.id)}
+                          >
+                             <ShoppingCart className="ml-2 h-5 w-5" />
+                             إزالة من السلة
+                          </Button>
+                        ) : (
+                          <Button 
+                             size="lg" 
+                             onClick={() => addToCart({
+                               id: course.id,
+                               title: course.title_ar || course.title,
+                               price: course.price,
+                               image_url: course.image_url,
+                               teacher_name: course.teacher?.full_name
+                             })} 
+                             className="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold border border-slate-700"
+                          >
+                             <ShoppingCart className="ml-2 h-5 w-5" />
+                             أضف إلى السلة
+                           </Button>
+                         )}
 
-                       <Button 
-                          size="lg" 
-                          onClick={handlePurchase} 
-                          disabled={purchasing || (course.price > walletBalance)} 
-                          className={`w-full font-bold shadow-lg ${course.price > walletBalance ? "bg-slate-800 text-slate-400 cursor-not-allowed border border-slate-700" : "bg-gradient-to-l from-teal-500 to-cyan-500 hover:from-teal-400 hover:to-cyan-400 text-slate-900 shadow-teal-500/25"}`}
-                       >
-                         {purchasing ? (
-                           <Loader2 className="ml-2 h-5 w-5 animate-spin" />
-                         ) : null}
-                         {!purchasing && course.price > 0 ? "شراء الآن" : !purchasing ? "التسجيل مجاناً" : "جاري المعالجة..."}
-                       </Button>
-                     </>
-                   )}
-                   
-                   {!hasPurchased && course.price > walletBalance && (
-                     <p className="text-xs text-red-400 text-center w-full bg-red-500/10 p-2 rounded-lg mt-2">
-                       الرصيد غير كافٍ. يرجى شحن محفظتك للمتابعة.
-                     </p>
-                   )}
-                </CardFooter>
+                        <Button 
+                           size="lg" 
+                           onClick={handlePurchase} 
+                           disabled={purchasing || (course.price > walletBalance)} 
+                           className={`w-full font-bold shadow-lg ${course.price > walletBalance ? "bg-slate-800 text-slate-400 cursor-not-allowed border border-slate-700" : "bg-gradient-to-l from-teal-500 to-cyan-500 hover:from-teal-400 hover:to-cyan-400 text-slate-900 shadow-teal-500/25"}`}
+                        >
+                          {purchasing ? (
+                            <Loader2 className="ml-2 h-5 w-5 animate-spin" />
+                          ) : null}
+                          {purchasing ? "جاري المعالجة..." : "شراء الآن"}
+                        </Button>
+                      </>
+                    )}
+                    
+                    {course.price > 0 && !hasPurchased && course.price > walletBalance && (
+                      <p className="text-xs text-red-400 text-center w-full bg-red-500/10 p-2 rounded-lg mt-2">
+                        الرصيد غير كافٍ. يرجى شحن محفظتك للمتابعة.
+                      </p>
+                    )}
+                 </CardFooter>
               </Card>
            </div>
         </div>

@@ -9,9 +9,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Plus, Calendar, Search, FileText, ArrowDownRight, ArrowUpRight, CheckCircle2, Download } from "lucide-react";
+import { Loader2, Plus, Calendar as CalendarIcon, Search, FileText, ArrowDownRight, ArrowUpRight, CheckCircle2, Download } from "lucide-react";
 import { toast } from "sonner";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, cn } from "@/lib/utils";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import * as XLSX from 'xlsx';
 
 interface CombinedTransaction {
   id: string;
@@ -23,14 +26,141 @@ interface CombinedTransaction {
 
 export function TeacherStatement() {
   const [selectedTeacherId, setSelectedTeacherId] = useState<string>("all");
-  const [fromDate, setFromDate] = useState<string>("");
-  const [toDate, setToDate] = useState<string>("");
+  const [fromDate, setFromDate] = useState<Date | undefined>(undefined);
+  const [toDate, setToDate] = useState<Date | undefined>(undefined);
   
   const [isAddTxOpen, setIsAddTxOpen] = useState(false);
   const [isAddingTx, setIsAddingTx] = useState(false);
-  const [txType, setTxType] = useState<"adjustment" | "withdrawal">("adjustment");
   const [txServiceName, setTxServiceName] = useState("");
   const [txAmount, setTxAmount] = useState("");
+
+  const generateReceipt = (teacherName: string, amount: number, service: string, date: Date) => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    const formattedDate = format(date, "dd/MM/yyyy HH:mm");
+    const amountStr = formatCurrency(amount);
+
+    const html = `
+      <html dir="rtl">
+        <head>
+          <title>إيصال صرف - ${teacherName}</title>
+          <style>
+            body {
+              font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+              padding: 40px;
+              color: #333;
+              background: #f9f9f9;
+            }
+            .receipt-card {
+              max-width: 600px;
+              margin: 0 auto;
+              background: #fff;
+              border-radius: 16px;
+              box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+              padding: 40px;
+              border-top: 8px solid #0d9488;
+            }
+            .header {
+              text-align: center;
+              margin-bottom: 30px;
+            }
+            .header h1 {
+              color: #0d9488;
+              margin: 0 0 10px 0;
+              font-size: 28px;
+            }
+            .header p {
+              color: #666;
+              margin: 0;
+              font-size: 14px;
+            }
+            .details {
+              margin-top: 30px;
+              border-top: 1px dashed #ccc;
+              border-bottom: 1px dashed #ccc;
+              padding: 20px 0;
+            }
+            .row {
+              display: flex;
+              justify-content: space-between;
+              margin-bottom: 15px;
+              font-size: 16px;
+            }
+            .row:last-child {
+              margin-bottom: 0;
+            }
+            .label {
+              font-weight: bold;
+              color: #555;
+            }
+            .value {
+              color: #111;
+            }
+            .amount {
+              font-size: 24px;
+              font-weight: bold;
+              color: #0d9488;
+              text-align: center;
+              margin: 30px 0;
+            }
+            .footer {
+              text-align: center;
+              margin-top: 40px;
+              color: #888;
+              font-size: 14px;
+            }
+            @media print {
+              body { background: #fff; padding: 0; }
+              .receipt-card { box-shadow: none; border: 1px solid #ccc; border-top: 8px solid #0d9488; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="receipt-card">
+            <div class="header">
+              <h1>إيصال صرف أرباح</h1>
+              <p>نسخة إلكترونية معتمدة</p>
+            </div>
+            
+            <div class="amount">
+              تم صرف مبلغ: ${amountStr}
+            </div>
+
+            <div class="details">
+              <div class="row">
+                <span class="label">تم الصرف إلى الأستاذ:</span>
+                <span class="value">${teacherName}</span>
+              </div>
+              <div class="row">
+                <span class="label">التاريخ والوقت:</span>
+                <span class="value">${formattedDate}</span>
+              </div>
+              <div class="row">
+                <span class="label">طريقة الصرف:</span>
+                <span class="value">${service}</span>
+              </div>
+            </div>
+
+            <div class="footer">
+              <p>نشكركم على جهودكم المستمرة معنا.</p>
+              <p>تم إنشاء هذا الإيصال آلياً من النظام.</p>
+            </div>
+          </div>
+          <script>
+            window.onload = () => {
+              window.print();
+              setTimeout(() => window.close(), 500);
+            };
+          </script>
+        </body>
+      </html>
+    `;
+
+    printWindow.document.write(html);
+    printWindow.document.close();
+  };
+
 
   // 1. Fetch Teachers
   const { data: teachers, isLoading: isLoadingTeachers } = useQuery({
@@ -54,8 +184,8 @@ export function TeacherStatement() {
       let queryEarnings = supabase.from("teacher_earnings").select("*").eq("teacher_id", selectedTeacherId);
 
       if (fromDate) {
-        queryWallet = queryWallet.gte("created_at", new Date(fromDate).toISOString());
-        queryEarnings = queryEarnings.gte("created_at", new Date(fromDate).toISOString());
+        queryWallet = queryWallet.gte("created_at", fromDate.toISOString());
+        queryEarnings = queryEarnings.gte("created_at", fromDate.toISOString());
       }
       if (toDate) {
         const to = new Date(toDate);
@@ -98,6 +228,22 @@ export function TeacherStatement() {
 
   const selectedTeacher = teachers?.find(t => t.id === selectedTeacherId);
 
+  const displayBalance = useMemo(() => {
+    if (!transactions) return selectedTeacher?.wallet_balance || 0;
+    // If no date filter is applied, return the total wallet balance directly
+    if (!fromDate && !toDate) return selectedTeacher?.wallet_balance || 0;
+
+    // If a date filter is applied, calculate the net balance for the filtered period
+    const earnings = transactions
+      .filter(tx => tx.type === 'course_earning' || tx.type === 'deposit')
+      .reduce((sum, tx) => sum + tx.amount, 0);
+    const withdrawals = transactions
+      .filter(tx => tx.type === 'withdrawal')
+      .reduce((sum, tx) => sum + tx.amount, 0);
+    
+    return earnings - withdrawals;
+  }, [transactions, selectedTeacher, fromDate, toDate]);
+
   const handleAddTransaction = async () => {
     if (!selectedTeacherId || selectedTeacherId === "all") {
       toast.error("الرجاء اختيار الأستاذ أولاً");
@@ -118,9 +264,7 @@ export function TeacherStatement() {
       
       // Update wallet balance in teachers table
       const currentBalance = selectedTeacher?.wallet_balance || 0;
-      const newBalance = txType === 'adjustment' 
-        ? currentBalance + amount 
-        : currentBalance - amount;
+      const newBalance = currentBalance - amount;
 
       const { error: updateError } = await supabase
         .from('teachers')
@@ -135,7 +279,7 @@ export function TeacherStatement() {
         .insert({
           teacher_id: selectedTeacherId,
           amount: amount,
-          type: txType,
+          type: 'withdrawal',
           description_ar: txServiceName,
           description: txServiceName
         } as any);
@@ -147,6 +291,9 @@ export function TeacherStatement() {
       }
 
       toast.success("تمت إضافة الحركة بنجاح");
+      
+      generateReceipt(selectedTeacher?.profiles?.full_name || "أستاذ", amount, txServiceName, new Date());
+
       setTxAmount("");
       setTxServiceName("");
       setIsAddTxOpen(false);
@@ -165,7 +312,7 @@ export function TeacherStatement() {
     }
   };
 
-  const exportToCSV = () => {
+  const exportToExcel = () => {
     if (!transactions || transactions.length === 0) {
       toast.error("لا توجد بيانات للتصدير");
       return;
@@ -174,26 +321,22 @@ export function TeacherStatement() {
     const headers = ["ت", "التاريخ", "اسم الاستاذ", "القيمة", "اسم الخدمة", "نوع الحركة"];
     const rows = transactions.map((tx, idx) => {
       const type = tx.type === 'course_earning' ? 'أرباح' : tx.type === 'deposit' ? 'إيداع' : 'صرف';
-      const date = format(new Date(tx.created_at), "yyyy/MM/dd HH:mm");
-      // Wrap strings in quotes to handle commas and Arabic correctly
+      const date = format(new Date(tx.created_at), "dd/MM/yyyy HH:mm");
       return [
         transactions.length - idx,
-        `"${date}"`,
-        `"${selectedTeacher?.profiles?.full_name || ""}"`,
+        date,
+        selectedTeacher?.profiles?.full_name || "",
         tx.amount,
-        `"${tx.service_name}"`,
-        `"${type}"`
-      ].join(",");
+        tx.service_name,
+        type
+      ];
     });
 
-    const csvContent = "data:text/csv;charset=utf-8,\uFEFF" + [headers.join(","), ...rows].join("\n");
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `statement_${selectedTeacher?.profiles?.full_name || "teacher"}_${format(new Date(), 'yyyy-MM-dd')}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const data = [headers, ...rows];
+    const ws = XLSX.utils.aoa_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "كشف الحساب");
+    XLSX.writeFile(wb, `statement_${selectedTeacher?.profiles?.full_name || "teacher"}_${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
   };
 
   return (
@@ -217,39 +360,67 @@ export function TeacherStatement() {
 
         <div className="w-full lg:w-1/4">
           <label className="block text-sm font-medium text-slate-400 mb-2">من تاريخ</label>
-          <div className="relative">
-            <Calendar className="absolute right-3 top-3 h-5 w-5 text-slate-500" />
-            <Input 
-              type="date" 
-              value={fromDate}
-              onChange={(e) => setFromDate(e.target.value)}
-              className="pl-3 pr-10 h-12 bg-slate-800/50 border-slate-700 [color-scheme:dark]" 
-            />
-          </div>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant={"outline"}
+                className={cn(
+                  "w-full h-12 justify-start text-right font-normal bg-slate-800/50 border-slate-700 hover:bg-slate-800 hover:text-white",
+                  !fromDate && "text-slate-400"
+                )}
+              >
+                <CalendarIcon className="ml-2 h-5 w-5 text-slate-500" />
+                {fromDate ? format(fromDate, "dd/MM/yyyy") : <span>اختر تاريخ البداية</span>}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0 bg-slate-900 border-slate-800">
+              <Calendar
+                mode="single"
+                selected={fromDate}
+                onSelect={setFromDate}
+                initialFocus
+                className="bg-slate-900 text-white"
+              />
+            </PopoverContent>
+          </Popover>
         </div>
 
         <div className="w-full lg:w-1/4">
           <label className="block text-sm font-medium text-slate-400 mb-2">الى تاريخ</label>
-          <div className="relative">
-            <Calendar className="absolute right-3 top-3 h-5 w-5 text-slate-500" />
-            <Input 
-              type="date" 
-              value={toDate}
-              onChange={(e) => setToDate(e.target.value)}
-              className="pl-3 pr-10 h-12 bg-slate-800/50 border-slate-700 [color-scheme:dark]" 
-            />
-          </div>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant={"outline"}
+                className={cn(
+                  "w-full h-12 justify-start text-right font-normal bg-slate-800/50 border-slate-700 hover:bg-slate-800 hover:text-white",
+                  !toDate && "text-slate-400"
+                )}
+              >
+                <CalendarIcon className="ml-2 h-5 w-5 text-slate-500" />
+                {toDate ? format(toDate, "dd/MM/yyyy") : <span>اختر تاريخ النهاية</span>}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0 bg-slate-900 border-slate-800">
+              <Calendar
+                mode="single"
+                selected={toDate}
+                onSelect={setToDate}
+                initialFocus
+                className="bg-slate-900 text-white"
+              />
+            </PopoverContent>
+          </Popover>
         </div>
 
         <div className="w-full lg:w-auto mt-4 lg:mt-0 flex-1 flex justify-end gap-2">
           <Button 
-            onClick={exportToCSV}
+            onClick={exportToExcel}
             variant="outline"
             disabled={selectedTeacherId === "all" || !transactions?.length}
             className="h-12 px-4 border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white"
           >
             <Download className="h-4 w-4 ml-2" />
-            تصدير CSV
+            تصدير Excel
           </Button>
 
           <Dialog open={isAddTxOpen} onOpenChange={setIsAddTxOpen}>
@@ -268,25 +439,20 @@ export function TeacherStatement() {
               </DialogHeader>
               <div className="space-y-4 py-4">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-slate-300">نوع الحركة</label>
-                  <Select value={txType} onValueChange={(val: any) => setTxType(val)}>
+                  <label className="text-sm font-medium text-slate-300">طريقة الصرف (الخدمة)</label>
+                  <Select value={txServiceName} onValueChange={(val: any) => setTxServiceName(val)}>
                     <SelectTrigger className="w-full bg-slate-800/50 border-slate-700">
-                      <SelectValue />
+                      <SelectValue placeholder="اختر طريقة الصرف" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="adjustment">إيداع (زيادة الرصيد)</SelectItem>
-                      <SelectItem value="withdrawal">صرف (سحب من الرصيد)</SelectItem>
+                      <SelectItem value="ادفع لي">ادفع لي</SelectItem>
+                      <SelectItem value="يسر باي">يسر باي</SelectItem>
+                      <SelectItem value="موبي كاش">موبي كاش</SelectItem>
+                      <SelectItem value="كاش">كاش (نقدي)</SelectItem>
+                      <SelectItem value="تحويل بنكي">تحويل بنكي</SelectItem>
+                      <SelectItem value="تداول">تداول</SelectItem>
                     </SelectContent>
                   </Select>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-slate-300">اسم الخدمة</label>
-                  <Input 
-                    placeholder="مثال: يسر باي، كاش، موبي كاش" 
-                    value={txServiceName}
-                    onChange={(e) => setTxServiceName(e.target.value)}
-                    className="bg-slate-800/50 border-slate-700"
-                  />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-slate-300">القيمة (دينار)</label>
@@ -325,17 +491,19 @@ export function TeacherStatement() {
                     كشف حساب الاستاذ : {selectedTeacher?.profiles?.full_name || ""}
                   </h2>
                   <div className="flex items-center gap-2 mt-2 text-slate-500 font-medium">
-                    <Calendar className="w-4 h-4" />
+                    <CalendarIcon className="w-4 h-4" />
                     <span>
-                      {fromDate || "بداية"} - {toDate || "اليوم"}
+                      {fromDate ? format(fromDate, "dd/MM/yyyy") : "بداية"} - {toDate ? format(toDate, "dd/MM/yyyy") : "اليوم"}
                     </span>
                   </div>
                 </div>
               </div>
               <div className="bg-white px-6 py-4 rounded-xl border border-slate-200 shadow-sm text-center min-w-[200px]">
-                <p className="text-slate-500 text-sm font-bold mb-1">الرصيد المتاح</p>
+                <p className="text-slate-500 text-sm font-bold mb-1">
+                  {(fromDate || toDate) ? "صافي رصيد الفترة" : "الرصيد المتاح"}
+                </p>
                 <p className="text-3xl font-extrabold text-teal-600">
-                  {formatCurrency(selectedTeacher?.wallet_balance || 0)}
+                  {formatCurrency(displayBalance)}
                 </p>
               </div>
             </div>
@@ -364,7 +532,7 @@ export function TeacherStatement() {
                       <TableRow key={tx.id} className="border-slate-100 hover:bg-slate-50 transition-colors">
                         <TableCell className="text-right font-medium text-slate-500 px-6 py-4">{transactions.length - idx}</TableCell>
                         <TableCell className="text-right text-slate-700 px-6 py-4" dir="ltr">
-                          {format(new Date(tx.created_at), "yyyy/MM/dd HH:mm")}
+                          {format(new Date(tx.created_at), "dd/MM/yyyy HH:mm")}
                         </TableCell>
                         <TableCell className="text-right font-bold text-slate-800 px-6 py-4">
                           {selectedTeacher?.profiles?.full_name || ""}
@@ -408,7 +576,7 @@ export function TeacherStatement() {
             {/* Print Footer Summary */}
             <div className="bg-slate-100/50 border-t border-slate-200 p-8 flex justify-center items-center">
                 <h3 className="text-2xl font-bold text-slate-800" style={{ fontFamily: "'Cairo', sans-serif" }}>
-                  الرصيد المتاح: <span className="text-teal-600 ml-2">{formatCurrency(selectedTeacher?.wallet_balance || 0)}</span> دينار
+                  {(fromDate || toDate) ? "صافي رصيد الفترة:" : "الرصيد المتاح:"} <span className="text-teal-600 ml-2">{formatCurrency(displayBalance)}</span> دينار
                 </h3>
             </div>
           </CardContent>

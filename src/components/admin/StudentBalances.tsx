@@ -26,6 +26,11 @@ export function StudentBalances() {
   const [newMaxLimit, setNewMaxLimit] = useState("");
   const [savingLimit, setSavingLimit] = useState(false);
 
+  // Bulk edit limit state
+  const [isBulkEditing, setIsBulkEditing] = useState(false);
+  const [bulkMaxLimit, setBulkMaxLimit] = useState("");
+  const [savingBulkLimit, setSavingBulkLimit] = useState(false);
+
   useEffect(() => {
     fetchStudentBalances();
   }, []);
@@ -85,6 +90,34 @@ export function StudentBalances() {
     setSavingLimit(false);
   };
 
+  const handleBulkSaveLimit = async () => {
+    setSavingBulkLimit(true);
+    
+    // If empty string, set to null (fallback to global limit)
+    const val = bulkMaxLimit.trim() === "" ? null : parseFloat(bulkMaxLimit);
+    
+    if (val !== null && (isNaN(val) || val < 0)) {
+        toast.error("يرجى إدخال مبلغ صحيح (أو اتركه فارغاً لاستخدام الحد العام)");
+        setSavingBulkLimit(false);
+        return;
+    }
+
+    const { error } = await supabase
+      .from('profiles')
+      .update({ max_wallet_balance: val } as any)
+      .eq('role', 'customer');
+
+    if (error) {
+      toast.error("فشل في تحديث الحد الأقصى للجميع");
+    } else {
+      toast.success("تم تحديث الحد الأقصى لجميع الطلاب بنجاح");
+      setStudents(students.map(s => ({ ...s, max_wallet_balance: val })));
+      setIsBulkEditing(false);
+      setBulkMaxLimit("");
+    }
+    setSavingBulkLimit(false);
+  };
+
   return (
     <>
     <Card className="bg-slate-900/60 border-teal-900/40 shadow-xl" dir="rtl">
@@ -94,14 +127,23 @@ export function StudentBalances() {
             <CardTitle className="text-2xl font-bold text-white mb-1" style={{ fontFamily: "'Cairo', sans-serif" }}>أرصدة الطلاب</CardTitle>
             <p className="text-slate-400 text-sm">إدارة وعرض أرصدة الطلاب والحدود القصوى</p>
           </div>
-          <div className="relative w-full sm:w-[250px]">
-            <Search className="absolute right-3 top-2.5 h-4 w-4 text-slate-500" />
-            <Input
-              placeholder="بحث باسم الطالب..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-3 pr-9 w-full bg-slate-800/50 border-slate-700 text-slate-200 placeholder:text-slate-500 rounded-lg focus-visible:ring-teal-500"
-            />
+          <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+            <Button 
+                onClick={() => setIsBulkEditing(true)}
+                className="bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 border border-amber-500/50"
+            >
+                <Users className="w-4 h-4 ml-2" />
+                تعديل الحد للجميع
+            </Button>
+            <div className="relative w-full sm:w-[250px]">
+              <Search className="absolute right-3 top-2.5 h-4 w-4 text-slate-500" />
+              <Input
+                placeholder="بحث باسم الطالب..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-3 pr-9 w-full bg-slate-800/50 border-slate-700 text-slate-200 placeholder:text-slate-500 rounded-lg focus-visible:ring-teal-500"
+              />
+            </div>
           </div>
         </div>
       </CardHeader>
@@ -215,6 +257,58 @@ export function StudentBalances() {
                         <><Loader2 className="ml-2 h-4 w-4 animate-spin" /> جاري الحفظ...</>
                     ) : (
                         "حفظ التغييرات"
+                    )}
+                </Button>
+            </DialogFooter>
+        </DialogContent>
+    </Dialog>
+
+    <Dialog open={isBulkEditing} onOpenChange={(open) => !open && setIsBulkEditing(false)}>
+        <DialogContent className="bg-slate-900 border-amber-900/50 text-white sm:max-w-md" dir="rtl">
+            <DialogHeader className="text-right">
+                <DialogTitle className="text-white text-xl" style={{ fontFamily: "'Cairo', sans-serif" }}>
+                    تعديل الحد الأقصى لجميع الطلاب
+                </DialogTitle>
+                <DialogDescription className="text-slate-400 mt-1">
+                    سيتم تطبيق هذا الحد على <strong className="text-amber-400">جميع الطلاب</strong> في النظام.
+                </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4 py-4">
+                <div className="space-y-3">
+                    <label className="text-sm font-medium text-slate-300 block">الحد الأقصى (اتركه فارغاً لاستخدام الحد العام للنظام):</label>
+                    <div className="relative">
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">د.ل</span>
+                        <Input
+                            type="number"
+                            placeholder="مثال: 200 (أو اترك فارغاً)"
+                            value={bulkMaxLimit}
+                            onChange={(e) => setBulkMaxLimit(e.target.value)}
+                            className="pl-12 bg-slate-950 border-slate-700 text-white focus:border-amber-500 focus:ring-amber-500/20 text-left"
+                            min="0"
+                            dir="ltr"
+                        />
+                    </div>
+                </div>
+            </div>
+            
+            <DialogFooter className="gap-3 sm:gap-2 flex-col sm:flex-row">
+                <Button
+                    variant="outline"
+                    onClick={() => setIsBulkEditing(false)}
+                    className="border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white w-full sm:w-auto"
+                >
+                    إلغاء
+                </Button>
+                <Button
+                    onClick={handleBulkSaveLimit}
+                    disabled={savingBulkLimit}
+                    className="bg-gradient-to-l from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-900 font-bold w-full sm:w-auto shadow-lg shadow-amber-500/20"
+                >
+                    {savingBulkLimit ? (
+                        <><Loader2 className="ml-2 h-4 w-4 animate-spin" /> جاري الحفظ...</>
+                    ) : (
+                        "تطبيق للجميع"
                     )}
                 </Button>
             </DialogFooter>

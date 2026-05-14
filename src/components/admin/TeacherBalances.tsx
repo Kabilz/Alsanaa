@@ -86,12 +86,6 @@ export function TeacherBalances() {
                   <TableHead className="text-right text-teal-400 py-4">اسم المعلم</TableHead>
                   <TableHead className="text-right text-teal-400 py-4">
                     <div className="flex items-center gap-1.5">
-                      <span>رصيد الحساب</span>
-                      <Wallet className="h-3.5 w-3.5" />
-                    </div>
-                  </TableHead>
-                  <TableHead className="text-right text-teal-400 py-4">
-                    <div className="flex items-center gap-1.5">
                       <span>أرباح التدريس</span>
                       <TrendingUp className="h-3.5 w-3.5" />
                     </div>
@@ -101,7 +95,7 @@ export function TeacherBalances() {
               <TableBody>
                 {filteredTeachers.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={3} className="h-32 text-center text-slate-500 bg-slate-900/20">
+                    <TableCell colSpan={2} className="h-32 text-center text-slate-500 bg-slate-900/20">
                       <div className="flex flex-col items-center justify-center gap-2">
                         <Users className="h-8 w-8 text-slate-600 mb-2" />
                         <p>{searchTerm ? "لا يوجد معلم بهذا الاسم" : "لا يوجد معلمين حالياً"}</p>
@@ -113,13 +107,6 @@ export function TeacherBalances() {
                     <TableRow key={teacher.id} className="border-slate-800/50 hover:bg-slate-800/30 transition-colors">
                       <TableCell className="text-right font-medium text-white py-4">
                         {teacher.profiles?.full_name || "اسم غير محدد"}
-                      </TableCell>
-                      {/* Profile Wallet Balance */}
-                      <TableCell className="text-right py-4">
-                        <span className="inline-flex items-center gap-1.5 bg-blue-950/40 text-blue-300 font-bold px-3 py-1 rounded-lg border border-blue-800/40">
-                          <Wallet className="h-3.5 w-3.5 opacity-70" />
-                          {formatCurrency(teacher.profiles?.wallet_balance || 0)}
-                        </span>
                       </TableCell>
                       {/* Teacher Earnings */}
                       <TableCell className="text-right py-4">
