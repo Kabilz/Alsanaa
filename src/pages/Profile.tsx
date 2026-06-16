@@ -36,6 +36,9 @@ const Profile = () => {
     const [userMaxWalletBalance, setUserMaxWalletBalance] = useState<number | null>(null);
     const [paymentMethod, setPaymentMethod] = useState<string | null>(null);
     const [paymentRef, setPaymentRef] = useState<string>("");
+    const [edfaliStep, setEdfaliStep] = useState<"phone" | "pin">("phone");
+    const [smsPin, setSmsPin] = useState<string>("");
+    const [sessionId, setSessionId] = useState<string>("");
 
     // ── Settings state ──
     const [avatarUrl, setAvatarUrl] = useState<string>("");
@@ -175,8 +178,8 @@ const Profile = () => {
     const handleAddBalance = async () => {
         if (!paymentMethod) { toast.error("يرجى اختيار وسيلة الدفع"); return; }
         if (!paymentRef) { toast.error("يرجى إدخال رقم البطاقة/الهاتف"); return; }
-        if (paymentMethod === "ادفع لي" && paymentRef.length !== 10) {
-            toast.error("رقم الهاتف لخدمة ادفع لي يجب أن يكون 10 أرقام");
+        if (paymentMethod === "ادفع لي" && (paymentRef.length < 9 || paymentRef.length > 10)) {
+            toast.error("رقم الهاتف لخدمة ادفع لي يجب أن يكون 9 أو 10 أرقام");
             return;
         }
         const amount = customAmount ? parseFloat(customAmount) : selectedAmount;
@@ -192,35 +195,91 @@ const Profile = () => {
 
         setIsAddingBalance(true);
         try {
-            const newBalance = balance + amount;
-            const { error } = await supabase.from('profiles')
-                .upsert({ id: user.id, wallet_balance: newBalance } as any, { onConflict: 'id' })
-                .eq('id', user.id);
-            if (error) throw error;
-            
-            const { error: txError } = await supabase.from('transactions').insert({
-                user_id: user.id,
-                amount: amount,
-                payment_method: 'topup',
-                payment_service: paymentMethod,
-                status: 'completed',
-            } as any);
-            
-            if (txError) {
-                console.error("Tx error", txError);
-                // Rollback balance
-                await supabase.from('profiles').update({ wallet_balance: balance } as any).eq('id', user.id);
-                throw txError;
+            if (paymentMethod === "ادفع لي") {
+                // Step 1: Initiate Adfali
+                const { data, error } = await supabase.functions.invoke("edfali-init", {
+                    body: { customerPhone: paymentRef.trim(), amount: amount },
+                });
+                if (error) throw new Error(error.message);
+                if (data?.error) throw new Error(data.error);
+
+                setSessionId(data.sessionId);
+                setEdfaliStep("pin");
+                toast.success("تم إرسال رمز التأكيد إلى هاتفك عبر الرسائل القصيرة");
+                setIsAddingBalance(false);
+                return; // Stop here and wait for PIN
             }
 
-            setBalance(newBalance);
-            toast.success(`تم الشحن عبر ${paymentMethod} بنجاح!`);
-            setDialogOpen(false); setCustomAmount(""); setSelectedAmount(25); setPaymentMethod(null); setPaymentRef("");
-        } catch (err) {
-            toast.error("فشل في شحن الرصيد. يرجى المحاولة مرة أخرى.");
-        } finally {
+            // Normal flow for other methods - Disabled for production
+            toast.error("هذه الخدمة قيد التطوير حالياً، يرجى استخدام خدمة أدفع لي للعمليات الحقيقية.");
+            setIsAddingBalance(false);
+            return;
+        } catch (err: any) {
+            toast.error(err.message || "فشل في إرسال الطلب. يرجى المحاولة مرة أخرى.");
             setIsAddingBalance(false);
         }
+    };
+
+    const handleEdfaliConfirm = async () => {
+        if (!smsPin.trim() || smsPin.trim().length !== 4) {
+            toast.error("يرجى إدخال رمز التأكيد المكون من 4 أرقام");
+            return;
+        }
+
+        setIsAddingBalance(true);
+        const amount = customAmount ? parseFloat(customAmount) : selectedAmount;
+        try {
+            const { data, error } = await supabase.functions.invoke("edfali-confirm", {
+                body: { customerPhone: paymentRef.trim(), smsPin: smsPin.trim(), sessionId },
+            });
+            if (error) throw new Error(error.message);
+            if (data?.error) throw new Error(data.error);
+            if (!data?.ok) throw new Error("فشل تأكيد الدفع");
+
+            await completeBalanceTopup(amount);
+        } catch (err: any) {
+            toast.error(err.message || "فشل تأكيد الدفع");
+            setIsAddingBalance(false);
+        }
+    };
+
+    const completeBalanceTopup = async (amount: number) => {
+        if (!user) return;
+        const newBalance = balance + amount;
+        const { error } = await supabase.from('profiles')
+            .upsert({ id: user.id, wallet_balance: newBalance } as any, { onConflict: 'id' })
+            .eq('id', user.id);
+        if (error) throw error;
+        
+        const { error: txError } = await supabase.from('transactions').insert({
+            user_id: user.id,
+            amount: amount,
+            payment_method: 'topup',
+            payment_service: paymentMethod,
+            status: 'completed',
+        } as any);
+        
+        if (txError) {
+            console.error("Tx error", txError);
+            await supabase.from('profiles').update({ wallet_balance: balance } as any).eq('id', user.id);
+            throw txError;
+        }
+
+        setBalance(newBalance);
+        toast.success(`تم الشحن عبر ${paymentMethod} بنجاح!`);
+        resetDialog();
+    };
+
+    const resetDialog = () => {
+        setDialogOpen(false); 
+        setCustomAmount(""); 
+        setSelectedAmount(25); 
+        setPaymentMethod(null); 
+        setPaymentRef("");
+        setEdfaliStep("phone");
+        setSmsPin("");
+        setSessionId("");
+        setIsAddingBalance(false);
     };
 
     const { data: transactions, isLoading: isLoadingTransactions } = useQuery({
@@ -628,7 +687,10 @@ const Profile = () => {
             {/* ═══════════════════════════════════════════════════════════
                 ADD BALANCE DIALOG
             ═══════════════════════════════════════════════════════════ */}
-            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <Dialog open={dialogOpen} onOpenChange={(open) => {
+                if (!open) resetDialog();
+                else setDialogOpen(true);
+            }}>
                 <DialogContent className="bg-slate-900 border-teal-900/50 text-white sm:max-w-md">
                     <DialogHeader className="text-right">
                         <DialogTitle className="text-white text-xl" style={{ fontFamily: "'Cairo', sans-serif" }}>{t('profile.add_funds_title')}</DialogTitle>
@@ -655,7 +717,12 @@ const Profile = () => {
                                 ].map((pm) => (
                                     <button
                                         key={pm.id}
-                                        onClick={() => setPaymentMethod(pm.id)}
+                                        onClick={() => {
+                                            setPaymentMethod(pm.id);
+                                            setEdfaliStep("phone");
+                                            setSmsPin("");
+                                            setSessionId("");
+                                        }}
                                         className="bg-slate-950 border border-slate-800 hover:border-teal-500/50 rounded-xl p-4 flex flex-col items-center justify-center gap-3 transition-all hover:bg-slate-900 group"
                                     >
                                         <div className={`p-3 rounded-full bg-slate-900 group-hover:bg-slate-800 ${pm.color}`}>
@@ -709,22 +776,54 @@ const Profile = () => {
                             <DialogFooter className="gap-3 sm:gap-2 flex-col sm:flex-row mt-6">
                                 <Button
                                     variant="outline"
-                                    onClick={() => { setPaymentMethod(null); setPaymentRef(""); setCustomAmount(""); }}
+                                    onClick={() => {
+                                        if (edfaliStep === "pin") {
+                                            setEdfaliStep("phone");
+                                            setSmsPin("");
+                                            setSessionId("");
+                                        } else {
+                                            setPaymentMethod(null); 
+                                            setPaymentRef(""); 
+                                            setCustomAmount(""); 
+                                        }
+                                    }}
                                     className="border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white w-full sm:w-auto"
                                 >
                                     رجوع
                                 </Button>
-                                <Button
-                                    onClick={handleAddBalance}
-                                    disabled={isAddingBalance || !paymentRef || !customAmount || parseFloat(customAmount) <= 0}
-                                    className="bg-gradient-to-l from-teal-500 to-cyan-500 hover:from-teal-400 hover:to-cyan-400 text-slate-900 font-bold w-full sm:w-auto shadow-lg shadow-teal-500/20"
-                                >
-                                    {isAddingBalance ? (
-                                        <><Loader2 className="ml-2 h-4 w-4 animate-spin" /> جاري المعالجة...</>
-                                    ) : (
-                                        "ارسال"
-                                    )}
-                                </Button>
+                                {edfaliStep === "pin" && paymentMethod === "ادفع لي" ? (
+                                    <div className="flex-1 w-full flex gap-3">
+                                        <Input
+                                            type="text"
+                                            inputMode="numeric"
+                                            placeholder="XXXX"
+                                            value={smsPin}
+                                            onChange={(e) => setSmsPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                                            className="bg-slate-950 border-amber-500/50 text-white focus:border-amber-500 h-10 text-center tracking-[0.5em] text-xl font-bold w-full"
+                                            maxLength={4}
+                                            dir="ltr"
+                                        />
+                                        <Button
+                                            onClick={handleEdfaliConfirm}
+                                            disabled={isAddingBalance || smsPin.length !== 4}
+                                            className="bg-gradient-to-l from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-900 font-bold shrink-0 shadow-lg shadow-amber-500/20"
+                                        >
+                                            {isAddingBalance ? <Loader2 className="ml-2 h-4 w-4 animate-spin" /> : "تأكيد"}
+                                        </Button>
+                                    </div>
+                                ) : (
+                                    <Button
+                                        onClick={handleAddBalance}
+                                        disabled={isAddingBalance || !paymentRef || !customAmount || parseFloat(customAmount) <= 0}
+                                        className="bg-gradient-to-l from-teal-500 to-cyan-500 hover:from-teal-400 hover:to-cyan-400 text-slate-900 font-bold w-full sm:w-auto shadow-lg shadow-teal-500/20"
+                                    >
+                                        {isAddingBalance ? (
+                                            <><Loader2 className="ml-2 h-4 w-4 animate-spin" /> جاري المعالجة...</>
+                                        ) : (
+                                            "ارسال"
+                                        )}
+                                    </Button>
+                                )}
                             </DialogFooter>
                         </div>
                     )}

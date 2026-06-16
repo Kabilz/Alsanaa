@@ -75,7 +75,7 @@ serve(async (req) => {
       <Mobile>${escapeXml(merchantMobile)}</Mobile>
       <Pin>${escapeXml(EDFALI_PIN)}</Pin>
       <Cmobile>${escapeXml(cmobile)}</Cmobile>
-      <decimalAmount>${decimalAmount}</decimalAmount>
+      <Amount>${decimalAmount}</Amount>
       <PW>${escapeXml(EDFALI_PW)}</PW>
     </DoPTrans>
   </soap:Body>

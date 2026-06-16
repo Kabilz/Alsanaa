@@ -1,0 +1,58 @@
+﻿<?xml version="1.0"?>
+<doc>
+<assembly>
+<name>
+WindowsApplication1
+</name>
+</assembly>
+<members>
+<member name="M:WindowsApplication1.EdfaliService.NewEdfali.#ctor">
+	<remarks/>
+</member><member name="E:WindowsApplication1.EdfaliService.NewEdfali.DoPTransCompleted">
+	<remarks/>
+</member><member name="E:WindowsApplication1.EdfaliService.NewEdfali.OnlineConfTransCompleted">
+	<remarks/>
+</member><member name="M:WindowsApplication1.EdfaliService.NewEdfali.DoPTrans(System.String,System.String,System.String,System.Decimal,System.String)">
+	<remarks/>
+</member><member name="M:WindowsApplication1.EdfaliService.NewEdfali.DoPTransAsync(System.String,System.String,System.String,System.Decimal,System.String)">
+	<remarks/>
+</member><member name="M:WindowsApplication1.EdfaliService.NewEdfali.DoPTransAsync(System.String,System.String,System.String,System.Decimal,System.String,System.Object)">
+	<remarks/>
+</member><member name="M:WindowsApplication1.EdfaliService.NewEdfali.OnlineConfTrans(System.String,System.String,System.String,System.String)">
+	<remarks/>
+</member><member name="M:WindowsApplication1.EdfaliService.NewEdfali.OnlineConfTransAsync(System.String,System.String,System.String,System.String)">
+	<remarks/>
+</member><member name="M:WindowsApplication1.EdfaliService.NewEdfali.OnlineConfTransAsync(System.String,System.String,System.String,System.String,System.Object)">
+	<remarks/>
+</member><member name="M:WindowsApplication1.EdfaliService.NewEdfali.CancelAsync(System.Object)">
+	<remarks/>
+</member><member name="T:WindowsApplication1.EdfaliService.NewEdfali">
+	<remarks/>
+</member><member name="T:WindowsApplication1.EdfaliService.DoPTransCompletedEventHandler">
+	<remarks/>
+</member><member name="P:WindowsApplication1.EdfaliService.DoPTransCompletedEventArgs.Result">
+	<remarks/>
+</member><member name="T:WindowsApplication1.EdfaliService.DoPTransCompletedEventArgs">
+	<remarks/>
+</member><member name="T:WindowsApplication1.EdfaliService.OnlineConfTransCompletedEventHandler">
+	<remarks/>
+</member><member name="P:WindowsApplication1.EdfaliService.OnlineConfTransCompletedEventArgs.Result">
+	<remarks/>
+</member><member name="T:WindowsApplication1.EdfaliService.OnlineConfTransCompletedEventArgs">
+	<remarks/>
+</member><member name="P:WindowsApplication1.My.Resources.Resources.ResourceManager">
+	<summary>
+  Returns the cached ResourceManager instance used by this class.
+</summary>
+</member><member name="P:WindowsApplication1.My.Resources.Resources.Culture">
+	<summary>
+  Overrides the current thread's CurrentUICulture property for all
+  resource lookups using this strongly typed resource class.
+</summary>
+</member><member name="T:WindowsApplication1.My.Resources.Resources">
+	<summary>
+  A strongly-typed resource class, for looking up localized strings, etc.
+</summary>
+</member>
+</members>
+</doc>

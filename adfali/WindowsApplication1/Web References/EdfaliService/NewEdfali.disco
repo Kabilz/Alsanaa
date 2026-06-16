@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<discovery xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="http://schemas.xmlsoap.org/disco/">
+  <contractRef ref="http://62.240.55.2:6187/BCDussd/NewEdfali.asmx?wsdl" docRef="http://62.240.55.2:6187/BCDussd/NewEdfali.asmx" xmlns="http://schemas.xmlsoap.org/disco/scl/" />
+  <soap address="http://62.240.55.2:6187/BCDussd/NewEdfali.asmx" xmlns:q1="http://tempuri.org/" binding="q1:NewEdfaliSoap" xmlns="http://schemas.xmlsoap.org/disco/soap/" />
+  <soap address="http://62.240.55.2:6187/BCDussd/NewEdfali.asmx" xmlns:q2="http://tempuri.org/" binding="q2:NewEdfaliSoap12" xmlns="http://schemas.xmlsoap.org/disco/soap/" />
+</discovery>
