@@ -65,6 +65,11 @@ serve(async (req) => {
     const decimalAmount = Number(amount).toFixed(2);
 
     // Build SOAP envelope
+    // Ensure variables are trimmed
+    const safeMobile = merchantMobile.trim();
+    const safePw = EDFALI_PW.trim();
+    const safePin = String(EDFALI_PIN).trim();
+
     const soapBody = `<?xml version="1.0" encoding="utf-8"?>
 <soap:Envelope
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -72,16 +77,16 @@ serve(async (req) => {
   xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
   <soap:Body>
     <DoPTrans xmlns="http://tempuri.org/">
-      <Mobile>${escapeXml(merchantMobile)}</Mobile>
-      <Pin>${escapeXml(EDFALI_PIN)}</Pin>
+      <Mobile>${escapeXml(safeMobile)}</Mobile>
+      <Pin>${escapeXml(safePin)}</Pin>
       <Cmobile>${escapeXml(cmobile)}</Cmobile>
       <Amount>${decimalAmount}</Amount>
-      <PW>${escapeXml(EDFALI_PW)}</PW>
+      <PW>${escapeXml(safePw)}</PW>
     </DoPTrans>
   </soap:Body>
 </soap:Envelope>`;
 
-    console.log("Sending SOAP request to Adfali:", { merchantMobile, cmobile, decimalAmount });
+    console.log("Sending SOAP request to Adfali:", { safeMobile, cmobile, decimalAmount });
 
     const response = await fetch(ADFALI_URL, {
       method: "POST",
@@ -99,7 +104,7 @@ serve(async (req) => {
     if (xmlText.includes("<!DOCTYPE") || xmlText.includes("<html")) {
       return new Response(
         JSON.stringify({ error: "خطأ في الاتصال بخدمة ادفع لي. يرجى التحقق من بيانات الاعتماد.", raw: xmlText.substring(0, 200) }),
-        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -108,7 +113,7 @@ serve(async (req) => {
     if (!result) {
       return new Response(
         JSON.stringify({ error: "استجابة غير متوقعة من خدمة ادفع لي.", raw: xmlText.substring(0, 300) }),
-        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -125,7 +130,7 @@ serve(async (req) => {
     if (errorMap[resultUpper]) {
       return new Response(
         JSON.stringify({ error: errorMap[resultUpper], code: resultUpper }),
-        { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -139,7 +144,7 @@ serve(async (req) => {
     console.error("edfali-init error:", err);
     return new Response(
       JSON.stringify({ error: "فشل الاتصال بخدمة الدفع. يرجى المحاولة مرة أخرى.", detail: String(err) }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });

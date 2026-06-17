@@ -49,6 +49,10 @@ serve(async (req) => {
     let merchantMobile = EDFALI_MOBILE.replace(/\s+/g, "");
     if (merchantMobile.startsWith("0")) merchantMobile = merchantMobile.slice(1);
 
+    const safePw = EDFALI_PW.trim();
+    const safePin = String(smsPin).trim();
+    const safeSessionId = String(sessionId).trim();
+
     const soapBody = `<?xml version="1.0" encoding="utf-8"?>
 <soap:Envelope
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -57,14 +61,14 @@ serve(async (req) => {
   <soap:Body>
     <OnlineConfTrans xmlns="http://tempuri.org/">
       <Mobile>${escapeXml(merchantMobile)}</Mobile>
-      <Pin>${escapeXml(String(smsPin).trim())}</Pin>
-      <sessionID>${escapeXml(String(sessionId).trim())}</sessionID>
-      <PW>${escapeXml(EDFALI_PW)}</PW>
+      <Pin>${escapeXml(safePin)}</Pin>
+      <sessionID>${escapeXml(safeSessionId)}</sessionID>
+      <PW>${escapeXml(safePw)}</PW>
     </OnlineConfTrans>
   </soap:Body>
 </soap:Envelope>`;
 
-    console.log("Sending SOAP confirm to Adfali:", { merchantMobile, smsPin, sessionId });
+    console.log("Sending SOAP confirm to Adfali:", { merchantMobile, safePin, safeSessionId });
 
     const response = await fetch(ADFALI_URL, {
       method: "POST",
@@ -81,7 +85,7 @@ serve(async (req) => {
     if (xmlText.includes("<!DOCTYPE") || xmlText.includes("<html")) {
       return new Response(
         JSON.stringify({ error: "خطأ في الاتصال بخدمة ادفع لي.", raw: xmlText.substring(0, 200) }),
-        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -90,7 +94,7 @@ serve(async (req) => {
     if (!result) {
       return new Response(
         JSON.stringify({ error: "استجابة غير متوقعة من خدمة ادفع لي.", raw: xmlText.substring(0, 300) }),
-        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -103,14 +107,14 @@ serve(async (req) => {
 
     return new Response(
       JSON.stringify({ error: "رمز التأكيد غير صحيح أو انتهت صلاحية الجلسة.", code: result }),
-      { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
 
   } catch (err) {
     console.error("edfali-confirm error:", err);
     return new Response(
       JSON.stringify({ error: "فشل الاتصال بخدمة الدفع. يرجى المحاولة مرة أخرى.", detail: String(err) }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });

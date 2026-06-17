@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<wsdl:definitions xmlns:s="http://www.w3.org/2001/XMLSchema" xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/" xmlns:http="http://schemas.xmlsoap.org/wsdl/http/" xmlns:mime="http://schemas.xmlsoap.org/wsdl/mime/" xmlns:tns="http://tempuri.org/" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:tm="http://microsoft.com/wsdl/mime/textMatching/" xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" targetNamespace="http://tempuri.org/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">
+  <wsdl:types>
+    <s:schema elementFormDefault="qualified" targetNamespace="http://tempuri.org/">
+      <s:element name="DoPTrans">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="Mobile" type="s:string" />
+            <s:element minOccurs="0" maxOccurs="1" name="Pin" type="s:string" />
+            <s:element minOccurs="0" maxOccurs="1" name="Cmobile" type="s:string" />
+            <s:element minOccurs="1" maxOccurs="1" name="Amount" type="s:decimal" />
+            <s:element minOccurs="0" maxOccurs="1" name="PW" type="s:string" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="DoPTransResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="DoPTransResult" type="s:string" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="OnlineConfTrans">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="Mobile" type="s:string" />
+            <s:element minOccurs="0" maxOccurs="1" name="Pin" type="s:string" />
+            <s:element minOccurs="0" maxOccurs="1" name="sessionID" type="s:string" />
+            <s:element minOccurs="0" maxOccurs="1" name="PW" type="s:string" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="OnlineConfTransResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="OnlineConfTransResult" type="s:string" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+    </s:schema>
+  </wsdl:types>
+  <wsdl:message name="DoPTransSoapIn">
+    <wsdl:part name="parameters" element="tns:DoPTrans" />
+  </wsdl:message>
+  <wsdl:message name="DoPTransSoapOut">
+    <wsdl:part name="parameters" element="tns:DoPTransResponse" />
+  </wsdl:message>
+  <wsdl:message name="OnlineConfTransSoapIn">
+    <wsdl:part name="parameters" element="tns:OnlineConfTrans" />
+  </wsdl:message>
+  <wsdl:message name="OnlineConfTransSoapOut">
+    <wsdl:part name="parameters" element="tns:OnlineConfTransResponse" />
+  </wsdl:message>
+  <wsdl:portType name="NewEdfaliSoap">
+    <wsdl:operation name="DoPTrans">
+      <wsdl:input message="tns:DoPTransSoapIn" />
+      <wsdl:output message="tns:DoPTransSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="OnlineConfTrans">
+      <wsdl:input message="tns:OnlineConfTransSoapIn" />
+      <wsdl:output message="tns:OnlineConfTransSoapOut" />
+    </wsdl:operation>
+  </wsdl:portType>
+  <wsdl:binding name="NewEdfaliSoap" type="tns:NewEdfaliSoap">
+    <soap:binding transport="http://schemas.xmlsoap.org/soap/http" />
+    <wsdl:operation name="DoPTrans">
+      <soap:operation soapAction="http://tempuri.org/DoPTrans" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="OnlineConfTrans">
+      <soap:operation soapAction="http://tempuri.org/OnlineConfTrans" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+  <wsdl:binding name="NewEdfaliSoap12" type="tns:NewEdfaliSoap">
+    <soap12:binding transport="http://schemas.xmlsoap.org/soap/http" />
+    <wsdl:operation name="DoPTrans">
+      <soap12:operation soapAction="http://tempuri.org/DoPTrans" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="OnlineConfTrans">
+      <soap12:operation soapAction="http://tempuri.org/OnlineConfTrans" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+  <wsdl:service name="NewEdfali">
+    <wsdl:port name="NewEdfaliSoap" binding="tns:NewEdfaliSoap">
+      <soap:address location="http://62.240.55.2:6187/BCDUssd/NewEdfali.asmx" />
+    </wsdl:port>
+    <wsdl:port name="NewEdfaliSoap12" binding="tns:NewEdfaliSoap12">
+      <soap12:address location="http://62.240.55.2:6187/BCDUssd/NewEdfali.asmx" />
+    </wsdl:port>
+  </wsdl:service>
+</wsdl:definitions>
