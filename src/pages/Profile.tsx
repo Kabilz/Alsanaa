@@ -196,11 +196,15 @@ const Profile = () => {
         setIsAddingBalance(true);
         try {
             if (paymentMethod === "ادفع لي") {
-                // Step 1: Initiate Adfali
-                const { data, error } = await supabase.functions.invoke("edfali-init", {
-                    body: { customerPhone: paymentRef.trim(), amount: amount },
+                const response = await fetch("https://alsanaa.alsanact.com/edfali.php?action=init", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ customerPhone: paymentRef.trim(), amount: amount }),
                 });
-                if (error) throw new Error(error.message);
+                
+                if (!response.ok) throw new Error("فشل الاتصال بالخادم الوسيط");
+                const data = await response.json();
+                
                 if (data?.error) throw new Error(data.error);
 
                 setSessionId(data.sessionId);
@@ -229,10 +233,15 @@ const Profile = () => {
         setIsAddingBalance(true);
         const amount = customAmount ? parseFloat(customAmount) : selectedAmount;
         try {
-            const { data, error } = await supabase.functions.invoke("edfali-confirm", {
-                body: { customerPhone: paymentRef.trim(), smsPin: smsPin.trim(), sessionId },
+            const response = await fetch("https://alsanaa.alsanact.com/edfali.php?action=confirm", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ customerPhone: paymentRef.trim(), smsPin: smsPin.trim(), sessionId }),
             });
-            if (error) throw new Error(error.message);
+            
+            if (!response.ok) throw new Error("فشل الاتصال بالخادم الوسيط");
+            const data = await response.json();
+            
             if (data?.error) throw new Error(data.error);
             if (!data?.ok) throw new Error("فشل تأكيد الدفع");
 
