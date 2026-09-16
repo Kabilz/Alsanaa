@@ -70,13 +70,15 @@ const InstallApp = () => {
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4 justify-end animate-slide-up" style={{ animationDelay: '0.2s' }}>
-                <a href="/Alsanaa.apk" download>
+                <a href="https://play.google.com/store/apps/details?id=com.AlSanaa.app&pcampaignid=web_share" target="_blank" rel="noopener noreferrer">
                   <Button
                     size="lg"
                     className="w-full sm:w-auto bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-400 hover:to-cyan-400 text-slate-900 font-bold px-8 py-8 text-lg rounded-2xl shadow-xl shadow-teal-500/25 transition-all hover:scale-105 hover:-translate-y-1 group"
                   >
-                    <Download className="ml-3 h-6 w-6 animate-bounce" />
-                    تحميل للأندرويد (APK)
+                    <svg viewBox="0 0 512 512" className="ml-3 h-6 w-6 group-hover:animate-bounce fill-current">
+                      <path d="M325.3 234.3L104.6 13l280.8 161.2-60.1 60.1zM47 0C34 6.8 25.3 19.2 25.3 35.3v441.3c0 16.1 8.7 28.5 21.7 35.3l256.6-256L47 0zm425.2 225.6l-58.9-34.1-65.7 64.5 65.7 64.5 60.1-34.1c18-14.3 18-46.5-1.2-60.8zM104.6 499l280.8-161.2-60.1-60.1L104.6 499z"/>
+                    </svg>
+                    حمل من Google Play
                   </Button>
                 </a>
               </div>
@@ -214,10 +216,12 @@ const InstallApp = () => {
               <p className="text-lg text-slate-300 mb-10">
                 حمل التطبيق الآن وانضم إلى آلاف الطلاب الذين يطورون مهاراتهم يومياً.
               </p>
-              <a href="/Alsanaa.apk" download>
+              <a href="https://play.google.com/store/apps/details?id=com.AlSanaa.app&pcampaignid=web_share" target="_blank" rel="noopener noreferrer">
                 <Button size="lg" className="bg-teal-500 hover:bg-teal-400 text-slate-900 font-bold px-12 py-6 text-lg rounded-2xl shadow-xl shadow-teal-500/20 transition-all hover:scale-105">
-                  <Download className="ml-2 w-5 h-5" />
-                  تحميل التطبيق الآن
+                  <svg viewBox="0 0 512 512" className="ml-2 w-5 h-5 fill-current">
+                    <path d="M325.3 234.3L104.6 13l280.8 161.2-60.1 60.1zM47 0C34 6.8 25.3 19.2 25.3 35.3v441.3c0 16.1 8.7 28.5 21.7 35.3l256.6-256L47 0zm425.2 225.6l-58.9-34.1-65.7 64.5 65.7 64.5 60.1-34.1c18-14.3 18-46.5-1.2-60.8zM104.6 499l280.8-161.2-60.1-60.1L104.6 499z"/>
+                  </svg>
+                  حمل التطبيق من متجر جوجل
                 </Button>
               </a>
             </div>

@@ -168,10 +168,9 @@ export const RevenueStatement = () => {
                                 </SelectTrigger>
                                 <SelectContent className="bg-slate-900 border-slate-800 text-slate-200">
                                     <SelectItem value="all">الكل</SelectItem>
-                                    <SelectItem value="موبي كاش">موبي كاش</SelectItem>
-                                    <SelectItem value="مصرفي بلس">مصرفي بلس</SelectItem>
                                     <SelectItem value="يسر باي">يسر باي</SelectItem>
                                     <SelectItem value="ادفع لي">ادفع لي</SelectItem>
+                                    <SelectItem value="حوالة مصرفية">حوالة مصرفية</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>

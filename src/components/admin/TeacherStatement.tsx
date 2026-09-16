@@ -447,10 +447,7 @@ export function TeacherStatement() {
                     <SelectContent>
                       <SelectItem value="ادفع لي">ادفع لي</SelectItem>
                       <SelectItem value="يسر باي">يسر باي</SelectItem>
-                      <SelectItem value="موبي كاش">موبي كاش</SelectItem>
-                      <SelectItem value="كاش">كاش (نقدي)</SelectItem>
-                      <SelectItem value="تحويل بنكي">تحويل بنكي</SelectItem>
-                      <SelectItem value="تداول">تداول</SelectItem>
+                      <SelectItem value="حوالة مصرفية">حوالة مصرفية</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

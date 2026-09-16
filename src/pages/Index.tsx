@@ -23,6 +23,9 @@ import {
   Zap,
   Globe,
   BarChart3,
+  Download,
+  Smartphone,
+  ShieldCheck,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
@@ -506,6 +509,157 @@ const Index = () => {
               استكشف جميع الدورات
               <ArrowLeft className="mr-3 h-6 w-6" />
             </Button>
+          </div>
+        </div>
+      </section>
+      {/* ═══════════════════════════════════════════════════════════
+          APP DOWNLOAD SECTION
+      ═══════════════════════════════════════════════════════════ */}
+      <section className="relative py-28 overflow-hidden">
+        {/* Background glow orbs */}
+        <div className="pointer-events-none absolute inset-0">
+          <div className="absolute top-0 left-1/4 w-[600px] h-[600px] rounded-full bg-teal-500/8 blur-[120px] animate-pulse" />
+          <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] rounded-full bg-cyan-400/6 blur-[100px] animate-pulse [animation-delay:2s]" />
+        </div>
+
+        <div className="container mx-auto px-4 relative z-10">
+          <div className="grid lg:grid-cols-2 gap-16 items-center">
+
+            {/* Left: Text & CTA */}
+            <div className="text-right order-2 lg:order-1">
+              {/* Badge */}
+              <div className="inline-flex items-center gap-2 bg-teal-500/10 border border-teal-500/25 rounded-full px-5 py-2 text-teal-400 text-sm font-semibold mb-8">
+                <Smartphone className="w-4 h-4" />
+                <span>التطبيق الرسمي — متاح على أندرويد</span>
+              </div>
+
+              <h2
+                className="text-4xl md:text-6xl font-extrabold text-white mb-6 leading-tight"
+                style={{ fontFamily: "'Cairo', sans-serif" }}
+              >
+                تعلّم في أي مكان{" "}
+                <br />
+                <span className="bg-gradient-to-l from-teal-400 via-cyan-300 to-teal-500 bg-clip-text text-transparent">
+                  مع تطبيق السناء
+                </span>
+              </h2>
+
+              <p className="text-lg text-slate-400 mb-10 leading-relaxed max-w-lg mr-auto">
+                حمّل التطبيق واستمتع بتجربة تعليمية متكاملة — تصفح الدورات،
+                شاهد الدروس، وتابع تقدمك من هاتفك الذكي في أي وقت وأي مكان.
+              </p>
+
+              {/* Feature pills */}
+              <div className="flex flex-wrap gap-3 justify-end mb-10">
+                {[
+                  { icon: Zap, text: "أداء فائق السرعة" },
+                  { icon: ShieldCheck, text: "آمن ومحمي" },
+                  { icon: Globe, text: "يعمل بدون إنترنت" },
+                  { icon: Star, text: "مجاني بالكامل" },
+                ].map(({ icon: Icon, text }) => (
+                  <div
+                    key={text}
+                    className="flex items-center gap-2 bg-slate-800/70 border border-slate-700/60 rounded-full px-4 py-2 text-slate-300 text-sm hover:border-teal-500/50 hover:text-teal-300 transition-all"
+                  >
+                    <Icon className="w-4 h-4 text-teal-500" />
+                    {text}
+                  </div>
+                ))}
+              </div>
+
+              {/* Download button */}
+              <div className="flex flex-col sm:flex-row gap-4 justify-end">
+                <a href="https://play.google.com/store/apps/details?id=com.AlSanaa.app&pcampaignid=web_share" target="_blank" rel="noopener noreferrer">
+                  <button className="group flex items-center gap-3 bg-gradient-to-l from-teal-500 to-cyan-500 hover:from-teal-400 hover:to-cyan-400 text-slate-900 font-bold px-10 py-5 text-lg rounded-2xl shadow-2xl shadow-teal-500/30 transition-all hover:scale-105 hover:-translate-y-1">
+                    <svg viewBox="0 0 512 512" className="w-6 h-6 group-hover:animate-bounce fill-current">
+                      <path d="M325.3 234.3L104.6 13l280.8 161.2-60.1 60.1zM47 0C34 6.8 25.3 19.2 25.3 35.3v441.3c0 16.1 8.7 28.5 21.7 35.3l256.6-256L47 0zm425.2 225.6l-58.9-34.1-65.7 64.5 65.7 64.5 60.1-34.1c18-14.3 18-46.5-1.2-60.8zM104.6 499l280.8-161.2-60.1-60.1L104.6 499z"/>
+                    </svg>
+                    حمل من Google Play
+                  </button>
+                </a>
+              </div>
+
+              <p className="mt-4 text-slate-600 text-sm text-right">
+                ✓ مجاني · ✓ آمن · ✓ حجم خفيف 25 MB
+              </p>
+            </div>
+
+            {/* Right: Phone mockup */}
+            <div className="order-1 lg:order-2 flex justify-center">
+              <div className="relative">
+                {/* Glow behind phone */}
+                <div className="absolute inset-0 bg-teal-500/25 blur-[80px] rounded-full scale-110 pointer-events-none" />
+
+                {/* Phone shell */}
+                <div className="relative w-[280px] h-[560px] bg-slate-900 rounded-[3rem] border-[8px] border-slate-800 shadow-2xl shadow-teal-500/20 p-2 overflow-hidden ring-1 ring-white/10">
+                  {/* Notch */}
+                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-28 h-6 bg-slate-800 rounded-b-2xl z-30 flex items-center justify-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-slate-700" />
+                    <div className="w-10 h-1.5 rounded-full bg-slate-700" />
+                  </div>
+
+                  {/* Screen */}
+                  <div className="w-full h-full bg-gradient-to-b from-slate-800 to-slate-950 rounded-[2.2rem] overflow-hidden">
+                    <div className="p-5 pt-10 h-full flex flex-col gap-4">
+                      {/* Header */}
+                      <div className="flex items-center justify-between">
+                        <div className="w-8 h-8 rounded-full bg-teal-500/20 flex items-center justify-center">
+                          <User className="w-4 h-4 text-teal-400" />
+                        </div>
+                        <div className="text-right">
+                          <div className="text-xs text-slate-400">مرحباً بك</div>
+                          <div className="text-sm font-bold text-white">أحمد الراشد</div>
+                        </div>
+                      </div>
+
+                      {/* Progress card */}
+                      <div className="bg-gradient-to-r from-teal-500/20 to-cyan-500/20 rounded-2xl p-4 border border-teal-500/30">
+                        <div className="text-teal-400 font-bold text-sm mb-1">دورة React المتقدمة</div>
+                        <div className="text-xs text-slate-300 mb-2">أكملت 60%</div>
+                        <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
+                          <div className="h-full bg-gradient-to-r from-teal-400 to-cyan-400 w-[60%] rounded-full" />
+                        </div>
+                      </div>
+
+                      {/* Course list skeleton */}
+                      <div className="text-right text-sm font-bold text-white">الدورات المقترحة</div>
+                      {[1, 2, 3].map((i) => (
+                        <div key={i} className="bg-slate-800/60 rounded-xl p-3 flex gap-3 items-center border border-slate-700/50">
+                          <div className="w-12 h-12 rounded-lg bg-slate-700 animate-pulse flex-shrink-0" />
+                          <div className="flex-1 space-y-2 text-right">
+                            <div className="h-3 bg-slate-700 rounded w-3/4 animate-pulse ml-auto" />
+                            <div className="h-2 bg-slate-700 rounded w-1/2 animate-pulse ml-auto" />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Floating badge — size */}
+                <div className="absolute -left-10 top-16 bg-slate-800/90 backdrop-blur border border-teal-500/30 rounded-2xl px-4 py-3 shadow-2xl flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-teal-500/20 flex items-center justify-center">
+                    <Download className="w-5 h-5 text-teal-400" />
+                  </div>
+                  <div className="text-right">
+                    <div className="text-[10px] text-slate-400">حجم التطبيق</div>
+                    <div className="text-sm font-bold text-white">25 MB</div>
+                  </div>
+                </div>
+
+                {/* Floating badge — rating */}
+                <div className="absolute -right-8 bottom-24 bg-slate-800/90 backdrop-blur border border-cyan-500/30 rounded-2xl px-4 py-3 shadow-2xl flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-yellow-500/20 flex items-center justify-center">
+                    <Star className="w-5 h-5 text-yellow-400" />
+                  </div>
+                  <div className="text-right">
+                    <div className="text-[10px] text-slate-400">تقييم المستخدمين</div>
+                    <div className="text-sm font-bold text-white">4.9 / 5</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
       </section>

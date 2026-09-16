@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { BookOpen, Settings, CreditCard, Plus, Award, Loader2, Camera, User, Mail, Lock, Save, FileDown, Banknote, Smartphone, Receipt } from "lucide-react";
+import { User, LogOut, Banknote, Shield, Award, Edit, Smartphone, Loader2, ArrowRight, Save, X, Phone, Lock, Upload, Landmark, CreditCard, BookOpen, Settings, FileDown, Receipt, Camera, Mail, Plus } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -39,6 +39,14 @@ const Profile = () => {
     const [edfaliStep, setEdfaliStep] = useState<"phone" | "pin">("phone");
     const [smsPin, setSmsPin] = useState<string>("");
     const [sessionId, setSessionId] = useState<string>("");
+    // يسر باي
+    const [yusrStep, setYusrStep] = useState<"card" | "otp">("card");
+    const [yusrOtp, setYusrOtp] = useState<string>("");
+    const [yusrSessionId, setYusrSessionId] = useState<string>("");
+    
+    // حوالة مصرفية
+    const [receiptFile, setReceiptFile] = useState<File | null>(null);
+    const [uploadingReceipt, setUploadingReceipt] = useState(false);
 
     // ── Settings state ──
     const [avatarUrl, setAvatarUrl] = useState<string>("");
@@ -177,7 +185,7 @@ const Profile = () => {
 
     const handleAddBalance = async () => {
         if (!paymentMethod) { toast.error("يرجى اختيار وسيلة الدفع"); return; }
-        if (!paymentRef) { toast.error("يرجى إدخال رقم البطاقة/الهاتف"); return; }
+        if (!paymentRef && paymentMethod !== "حوالة مصرفية") { toast.error("يرجى إدخال رقم البطاقة/الهاتف"); return; }
         if (paymentMethod === "ادفع لي" && (paymentRef.length < 9 || paymentRef.length > 10)) {
             toast.error("رقم الهاتف لخدمة ادفع لي يجب أن يكون 9 أو 10 أرقام");
             return;
@@ -211,11 +219,68 @@ const Profile = () => {
                 setEdfaliStep("pin");
                 toast.success("تم إرسال رمز التأكيد إلى هاتفك عبر الرسائل القصيرة");
                 setIsAddingBalance(false);
-                return; // Stop here and wait for PIN
+                return;
+            }
+
+            if (paymentMethod === "يسر باي") {
+                const response = await fetch("https://alsanaa.alsanact.com/yusrpay.php?action=init", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ identityCard: paymentRef.trim(), amount: amount }),
+                });
+                if (!response.ok) throw new Error("فشل الاتصال بخدمة يسر باي");
+                const data = await response.json();
+                if (data?.error) throw new Error(data.error);
+                setYusrSessionId(data.sessionId);
+                setYusrStep("otp");
+                toast.success("تم إرسال رمز التأكيد (OTP) إلى هاتفك");
+                setIsAddingBalance(false);
+                return;
+            }
+
+            if (paymentMethod === "حوالة مصرفية") {
+                if (!receiptFile) {
+                    toast.error("يرجى إرفاق صورة إيصال الحوالة");
+                    setIsAddingBalance(false);
+                    return;
+                }
+                setUploadingReceipt(true);
+                try {
+                    const fileExt = receiptFile.name.split('.').pop();
+                    const fileName = `${user.id}_${Date.now()}.${fileExt}`;
+                    const { data: uploadData, error: uploadError } = await supabase.storage
+                        .from('receipts')
+                        .upload(fileName, receiptFile);
+                    
+                    if (uploadError) throw uploadError;
+
+                    const { data: publicUrlData } = supabase.storage.from('receipts').getPublicUrl(fileName);
+                    const receiptUrl = publicUrlData.publicUrl;
+
+                    const { error: txError } = await supabase.from('transactions').insert({
+                        user_id: user.id,
+                        amount: amount,
+                        payment_method: 'topup',
+                        payment_service: 'حوالة مصرفية',
+                        status: 'pending',
+                        receipt_url: receiptUrl
+                    } as any);
+
+                    if (txError) throw txError;
+
+                    toast.success("تم إرسال طلب الشحن بنجاح، يرجى انتظار موافقة الإدارة");
+                    resetDialog();
+                } catch (err: any) {
+                    toast.error(err.message || "فشل رفع الإيصال");
+                } finally {
+                    setUploadingReceipt(false);
+                    setIsAddingBalance(false);
+                }
+                return;
             }
 
             // Normal flow for other methods - Disabled for production
-            toast.error("هذه الخدمة قيد التطوير حالياً، يرجى استخدام خدمة أدفع لي للعمليات الحقيقية.");
+            toast.error("هذه الخدمة قيد التطوير حالياً، يرجى استخدام خدمة أدفع لي أو يسر باي.");
             setIsAddingBalance(false);
             return;
         } catch (err: any) {
@@ -252,6 +317,30 @@ const Profile = () => {
         }
     };
 
+    const handleYusrConfirm = async () => {
+        if (!yusrOtp.trim() || yusrOtp.trim().length < 4) {
+            toast.error("يرجى إدخال رمز OTP الصحيح");
+            return;
+        }
+        setIsAddingBalance(true);
+        const amount = customAmount ? parseFloat(customAmount) : selectedAmount;
+        try {
+            const response = await fetch("https://alsanaa.alsanact.com/yusrpay.php?action=confirm", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ smsPin: yusrOtp.trim(), sessionId: yusrSessionId }),
+            });
+            if (!response.ok) throw new Error("فشل الاتصال بخدمة يسر باي");
+            const data = await response.json();
+            if (data?.error) throw new Error(data.error);
+            if (!data?.ok) throw new Error("فشل تأكيد الدفع");
+            await completeBalanceTopup(amount);
+        } catch (err: any) {
+            toast.error(err.message || "فشل تأكيد الدفع عبر يسر باي");
+            setIsAddingBalance(false);
+        }
+    };
+
     const completeBalanceTopup = async (amount: number) => {
         if (!user) return;
         const newBalance = balance + amount;
@@ -280,14 +369,19 @@ const Profile = () => {
     };
 
     const resetDialog = () => {
-        setDialogOpen(false); 
-        setCustomAmount(""); 
-        setSelectedAmount(25); 
-        setPaymentMethod(null); 
+        setDialogOpen(false);
+        setCustomAmount("");
+        setSelectedAmount(25);
+        setPaymentMethod(null);
         setPaymentRef("");
         setEdfaliStep("phone");
         setSmsPin("");
         setSessionId("");
+        setYusrStep("card");
+        setYusrOtp("");
+        setYusrSessionId("");
+        setReceiptFile(null);
+        setUploadingReceipt(false);
         setIsAddingBalance(false);
     };
 
@@ -719,10 +813,9 @@ const Profile = () => {
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 {[
-                                    { id: 'موبي كاش', name: 'موبي كاش', icon: Smartphone, color: 'text-blue-400' },
-                                    { id: 'مصرفي بلس', name: 'مصرفي بلس', icon: Smartphone, color: 'text-indigo-400' },
                                     { id: 'يسر باي', name: 'يسر باي', icon: CreditCard, color: 'text-teal-400' },
                                     { id: 'ادفع لي', name: 'إدفع لي', icon: Smartphone, color: 'text-emerald-400' },
+                                    { id: 'حوالة مصرفية', name: 'حوالة مصرفية', icon: Landmark, color: 'text-amber-400' },
                                 ].map((pm) => (
                                     <button
                                         key={pm.id}
@@ -731,6 +824,10 @@ const Profile = () => {
                                             setEdfaliStep("phone");
                                             setSmsPin("");
                                             setSessionId("");
+                                            setYusrStep("card");
+                                            setYusrOtp("");
+                                            setYusrSessionId("");
+                                            setReceiptFile(null);
                                         }}
                                         className="bg-slate-950 border border-slate-800 hover:border-teal-500/50 rounded-xl p-4 flex flex-col items-center justify-center gap-3 transition-all hover:bg-slate-900 group"
                                     >
@@ -748,20 +845,41 @@ const Profile = () => {
                                 <h3 className="text-teal-400 text-lg font-bold">الشحن بخدمة {paymentMethod}</h3>
                             </div>
                             <div className="space-y-4">
-                                <div>
-                                    <label className="text-sm font-medium text-slate-300 block mb-2">
-                                        {paymentMethod === "ادفع لي" ? "رقم الهاتف (10 أرقام)" : "رقم البطاقة"}
-                                    </label>
-                                    <Input
-                                        type="text"
-                                        placeholder={paymentMethod === "ادفع لي" ? "09X XXX XXXX" : "أدخل رقم البطاقة..."}
-                                        value={paymentRef}
-                                        onChange={(e) => setPaymentRef(e.target.value)}
-                                        className="bg-slate-950 border-slate-700 text-white focus:border-teal-500 focus:ring-teal-500/20 h-12 text-center text-lg tracking-widest"
-                                        dir="ltr"
-                                        maxLength={paymentMethod === "ادفع لي" ? 10 : 20}
-                                    />
-                                </div>
+                                {paymentMethod === 'حوالة مصرفية' && (
+                                    <div className="bg-slate-900/60 p-4 rounded-xl border border-amber-900/30 text-sm space-y-2 mb-4 text-right">
+                                        <p><span className="text-slate-400 ml-2">المصرف:</span> <span className="text-white font-bold">التجارة والتنمية - فرع الفروسية</span></p>
+                                        <p><span className="text-slate-400 ml-2">الاسم:</span> <span className="text-white font-bold">شركة السناء للاستشارات والتدريب</span></p>
+                                        <p><span className="text-slate-400 ml-2">رقم الحساب:</span> <span className="text-white font-bold tracking-wider" dir="ltr">0012.789285.001</span></p>
+                                        <p><span className="text-slate-400 ml-2">IBAN:</span> <span className="text-white font-bold tracking-wider" dir="ltr">LY51 0100 1200 0012 7892 8500 1</span></p>
+                                    </div>
+                                )}
+                                
+                                {paymentMethod !== 'حوالة مصرفية' && (
+                                    <div>
+                                        <label className="text-sm font-medium text-slate-300 block mb-2">
+                                            {paymentMethod === "ادفع لي"
+                                                ? "رقم الهاتف (10 أرقام)"
+                                                : paymentMethod === "يسر باي"
+                                                ? "رقم بطاقة العميل (9 أو 10 أرقام)"
+                                                : "رقم البطاقة"}
+                                        </label>
+                                        <Input
+                                            type="text"
+                                            placeholder={
+                                                paymentMethod === "ادفع لي"
+                                                    ? "09X XXX XXXX"
+                                                    : paymentMethod === "يسر باي"
+                                                    ? "XXXXXXXXX"
+                                                    : "أدخل رقم البطاقة..."
+                                            }
+                                            value={paymentRef}
+                                            onChange={(e) => setPaymentRef(e.target.value)}
+                                            className="bg-slate-950 border-slate-700 text-white focus:border-teal-500 focus:ring-teal-500/20 h-12 text-center text-lg tracking-widest"
+                                            dir="ltr"
+                                            maxLength={paymentMethod === "ادفع لي" ? 10 : paymentMethod === "يسر باي" ? 10 : 20}
+                                        />
+                                    </div>
+                                )}
                                 <div>
                                     <label className="text-sm font-medium text-slate-300 block mb-2">القيمة (د.ل)</label>
                                     <Input
@@ -774,6 +892,18 @@ const Profile = () => {
                                         dir="ltr"
                                     />
                                 </div>
+
+                                {paymentMethod === 'حوالة مصرفية' && (
+                                    <div>
+                                        <label className="text-sm font-medium text-slate-300 block mb-2">صورة إيصال الحوالة</label>
+                                        <Input
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={(e) => setReceiptFile(e.target.files?.[0] || null)}
+                                            className="bg-slate-950 border-slate-700 text-white focus:border-teal-500 focus:ring-teal-500/20 h-12 pt-2 file:text-teal-400 file:bg-teal-500/10 file:border-0 file:rounded-md file:px-4 file:py-1 hover:file:bg-teal-500/20 cursor-pointer"
+                                        />
+                                    </div>
+                                )}
                                 {customAmount && parseFloat(customAmount) > 0 && (
                                     <div className="bg-teal-500/10 border border-teal-500/30 rounded-xl p-4 flex justify-between items-center animate-fade-in">
                                         <span className="text-slate-300 font-medium">سيتم شحن رصيدك بقيمة:</span>
@@ -787,30 +917,27 @@ const Profile = () => {
                                     variant="outline"
                                     onClick={() => {
                                         if (edfaliStep === "pin") {
-                                            setEdfaliStep("phone");
-                                            setSmsPin("");
-                                            setSessionId("");
+                                            setEdfaliStep("phone"); setSmsPin(""); setSessionId("");
+                                        } else if (yusrStep === "otp") {
+                                            setYusrStep("card"); setYusrOtp(""); setYusrSessionId("");
                                         } else {
-                                            setPaymentMethod(null); 
-                                            setPaymentRef(""); 
-                                            setCustomAmount(""); 
+                                            setPaymentMethod(null); setPaymentRef(""); setCustomAmount("");
                                         }
                                     }}
                                     className="border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white w-full sm:w-auto"
                                 >
                                     رجوع
                                 </Button>
+
+                                {/* ── ادفع لي: خطوة OTP ── */}
                                 {edfaliStep === "pin" && paymentMethod === "ادفع لي" ? (
                                     <div className="flex-1 w-full flex gap-3">
                                         <Input
-                                            type="text"
-                                            inputMode="numeric"
-                                            placeholder="XXXX"
+                                            type="text" inputMode="numeric" placeholder="XXXX"
                                             value={smsPin}
                                             onChange={(e) => setSmsPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
                                             className="bg-slate-950 border-amber-500/50 text-white focus:border-amber-500 h-10 text-center tracking-[0.5em] text-xl font-bold w-full"
-                                            maxLength={4}
-                                            dir="ltr"
+                                            maxLength={4} dir="ltr"
                                         />
                                         <Button
                                             onClick={handleEdfaliConfirm}
@@ -820,17 +947,46 @@ const Profile = () => {
                                             {isAddingBalance ? <Loader2 className="ml-2 h-4 w-4 animate-spin" /> : "تأكيد"}
                                         </Button>
                                     </div>
+
+                                ) : yusrStep === "otp" && paymentMethod === "يسر باي" ? (
+                                    /* ── يسر باي: خطوة OTP ── */
+                                    <div className="flex-1 w-full space-y-3">
+                                        <p className="text-slate-400 text-sm text-center">أدخل رمز OTP الذي وصلك على هاتفك</p>
+                                        <div className="flex gap-3">
+                                            <Input
+                                                type="text" inputMode="numeric" placeholder="XXXXXX"
+                                                value={yusrOtp}
+                                                onChange={(e) => setYusrOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                                                className="bg-slate-950 border-teal-500/50 text-white focus:border-teal-500 h-10 text-center tracking-[0.4em] text-xl font-bold w-full"
+                                                maxLength={6} dir="ltr"
+                                            />
+                                            <Button
+                                                onClick={handleYusrConfirm}
+                                                disabled={isAddingBalance || yusrOtp.length < 4}
+                                                className="bg-gradient-to-l from-teal-500 to-cyan-500 hover:from-teal-400 hover:to-cyan-400 text-slate-900 font-bold shrink-0 shadow-lg shadow-teal-500/20"
+                                            >
+                                                {isAddingBalance ? <Loader2 className="ml-2 h-4 w-4 animate-spin" /> : "تأكيد"}
+                                            </Button>
+                                        </div>
+                                    </div>
+
                                 ) : (
+                                    /* ── زر الإرسال الافتراضي ── */
                                     <Button
                                         onClick={handleAddBalance}
-                                        disabled={isAddingBalance || !paymentRef || !customAmount || parseFloat(customAmount) <= 0}
+                                        disabled={
+                                            isAddingBalance || 
+                                            uploadingReceipt ||
+                                            (!paymentRef && paymentMethod !== 'حوالة مصرفية') || 
+                                            !customAmount || 
+                                            parseFloat(customAmount) <= 0 ||
+                                            (paymentMethod === 'حوالة مصرفية' && !receiptFile)
+                                        }
                                         className="bg-gradient-to-l from-teal-500 to-cyan-500 hover:from-teal-400 hover:to-cyan-400 text-slate-900 font-bold w-full sm:w-auto shadow-lg shadow-teal-500/20"
                                     >
-                                        {isAddingBalance ? (
+                                        {isAddingBalance || uploadingReceipt ? (
                                             <><Loader2 className="ml-2 h-4 w-4 animate-spin" /> جاري المعالجة...</>
-                                        ) : (
-                                            "ارسال"
-                                        )}
+                                        ) : "ارسال"}
                                     </Button>
                                 )}
                             </DialogFooter>

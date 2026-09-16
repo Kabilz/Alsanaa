@@ -7,6 +7,7 @@ import { StudentBalances } from "@/components/admin/StudentBalances";
 import { TeacherBalances } from "@/components/admin/TeacherBalances";
 import { AnnouncementManagement } from "@/components/admin/AnnouncementManagement";
 import { RefundManagement } from "@/components/admin/RefundManagement";
+import { BankTransfersAdmin } from "@/components/admin/BankTransfersAdmin";
 import { 
   Users, 
   DollarSign, 
@@ -18,13 +19,16 @@ import {
   FileText,
   RotateCcw,
   Banknote,
-  GraduationCap
+  GraduationCap,
+  Landmark,
+  Settings
 } from "lucide-react";
 
 import { AdminPdfs } from "@/components/admin/AdminPdfs";
 import { RevenueStatement } from "@/components/admin/RevenueStatement";
 import { TeacherStatement } from "@/components/admin/TeacherStatement";
 import { EducationalLevelsManager } from "@/components/admin/EducationalLevelsManager";
+import { AdminSettings } from "@/components/admin/AdminSettings";
 import { CourseList } from "@/components/CourseList";
 import { CourseForm } from "@/components/CourseForm";
 import { QuizManager } from "@/components/QuizManager";
@@ -98,6 +102,10 @@ export function EnhancedAdminDashboard() {
                 <CreditCard className="h-4 w-4 ml-2" />
                 <span>أرصدة الطلاب</span>
               </TabsTrigger>
+              <TabsTrigger value="bank_transfers" className="data-[state=active]:bg-teal-500/20 data-[state=active]:text-teal-400 data-[state=active]:shadow-sm rounded-xl py-2.5 px-5 font-semibold transition-all whitespace-nowrap">
+                <Landmark className="h-4 w-4 ml-2 text-teal-400/80" />
+                <span>الحوالات المصرفية</span>
+              </TabsTrigger>
               <TabsTrigger value="teacher_balances" className="data-[state=active]:bg-cyan-500/20 data-[state=active]:text-cyan-400 data-[state=active]:shadow-sm rounded-xl py-2.5 px-5 font-semibold transition-all whitespace-nowrap">
                 <CreditCard className="h-4 w-4 ml-2" />
                 <span>أرصدة المعلمين</span>
@@ -129,6 +137,10 @@ export function EnhancedAdminDashboard() {
                 <span className="hidden sm:inline">المراحل الدراسية</span>
                 <span className="sm:hidden">المراحل</span>
               </TabsTrigger>
+              <TabsTrigger value="settings" className="data-[state=active]:bg-teal-500/20 data-[state=active]:text-teal-400 data-[state=active]:shadow-sm rounded-xl py-2.5 px-5 font-semibold transition-all whitespace-nowrap">
+                <Settings className="h-4 w-4 ml-2" />
+                <span>الإعدادات</span>
+              </TabsTrigger>
             </TabsList>
           </div>
 
@@ -147,6 +159,10 @@ export function EnhancedAdminDashboard() {
 
             <TabsContent value="student_balances" className="mt-0 outline-none">
               <StudentBalances />
+            </TabsContent>
+
+            <TabsContent value="bank_transfers" className="mt-0 outline-none">
+              <BankTransfersAdmin />
             </TabsContent>
 
             <TabsContent value="teacher_balances" className="mt-0 outline-none">
@@ -171,6 +187,10 @@ export function EnhancedAdminDashboard() {
 
             <TabsContent value="levels" className="mt-0 outline-none">
               <EducationalLevelsManager />
+            </TabsContent>
+
+            <TabsContent value="settings" className="mt-0 outline-none">
+              <AdminSettings />
             </TabsContent>
 
             <TabsContent value="courses" className="mt-0 outline-none">

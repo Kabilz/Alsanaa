@@ -2,8 +2,26 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
 import { fileURLToPath } from "url";
+import fs from "fs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// ملفات PHP التي يجب نسخها إلى dist بعد كل build
+const phpFiles = ["edfali.php", "yusrpay.php"];
+
+const copyPhpPlugin = {
+  name: "copy-php-files",
+  closeBundle() {
+    phpFiles.forEach((file) => {
+      const src = path.resolve(__dirname, file);
+      const dest = path.resolve(__dirname, "dist", file);
+      if (fs.existsSync(src)) {
+        fs.copyFileSync(src, dest);
+        console.log(`✅ Copied ${file} → dist/${file}`);
+      }
+    });
+  },
+};
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -11,7 +29,7 @@ export default defineConfig({
     host: "::",
     port: 8080,
   },
-  plugins: [react()],
+  plugins: [react(), copyPhpPlugin],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
